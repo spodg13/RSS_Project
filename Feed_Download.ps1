@@ -20,7 +20,8 @@ $i = 0
 
 
 $doc = New-Object System.Xml.XmlDocument
-$qry = @('killing', 'died', 'fatal', 'Sutter', 'crash', 'accident', 'shooting', 'victim' )
+$qry = @('killing', 'died', 'fatal', 'Sutter', 'crash', 'accident', 'shooting', 'victim', 'hit-and-run', 'collision', 'dies', 'arrested','suspects' )
+$cities = @('Sacramento','Roseville','Elk Grove','Tracy','Lodi','Stockton', 'San Francisco','San Jose','Citrus Heights','Auburn','Antioch','Brentwood','Oakland','Fairfield')
 
 foreach($feed in $feeds) {
 $i++
@@ -56,13 +57,24 @@ $posts=@()
 
 
 $posts = $posts + $cposts
-
 $filtered = @()
+$filteredlocations = @()
+
 
 foreach($term in $qry){
-$filtered += $posts | where-object {($_.Desc -Match $term -or $_.Title -match $term)} | Select-Object $_
+$filteredposts += $posts | where-object {($_.Desc -Match $term -or $_.Title -match $term)} | Select-Object $_
 
 }
+
+foreach($city in $cities){
+$filteredlocations += $filteredposts | where-object {($_.Desc -Match $city -or $_.Title -match $city)} | Select-Object $_
+
+}
+
+
+
+
+$filtered = $filteredlocations | Sort-Object -Unique -Property Title
 
 
 $Header = @"
@@ -94,9 +106,10 @@ $posts = $posts | ConvertTo-Html -as Table -Property Title, Desc, link -Fragment
 
 
 $filtered = $filtered | ConvertTo-Html -as Table -Property Title, Desc, link -Fragment `
-    -PreContent "<h3> Filtered Feed Terms: $qry </h3>"
+    -PreContent "<h3> Filtered Feed Terms: $qry </h3>"|Out-String
+$filtered = $filtered -replace '(?<weblink>https:\/\/\S*)\<\/td\>', '<a href="${weblink}">Click_Here</a>'
 
 $ResultsHTML = ConvertTo-Html -Body "$posts", "$filtered" -Title "RSS Feed Report" -Head $Header `
- -PostContent "<br><h3> <br> Created on $strDate  by $env:UserName<br></h3>" `
+ -PostContent "<br><h3> <br>Locations = $cities <br><br> Created on $strDate  by $env:UserName<br></h3>" `
  |Out-File "a:\TestScript\RSS_Feed.html"
 
