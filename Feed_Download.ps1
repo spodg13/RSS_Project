@@ -20,8 +20,8 @@ $i = 0
 
 
 $doc = New-Object System.Xml.XmlDocument
-$qry = @('killing', 'died', 'fatal', 'Sutter', 'crash', 'accident', 'shooting', 'victim', 'hit-and-run', 'collision', 'dies', 'arrested','suspects' )
-$cities = @('Sacramento','Roseville','Elk Grove','Tracy','Lodi','Stockton', 'San Francisco','San Jose','Citrus Heights','Auburn','Antioch','Brentwood','Oakland','Fairfield')
+$qry = @('accident','arrested','collision','crash','died','dies','fatal','hit-and-run','killing','shooting','suspects','Sutter','victim')
+$cities = @('Antioch','Auburn','Brentwood','Citrus Heights','Elk Grove','Fairfield','Lodi','Oakland','Richmond','Rocklin','Roseville','Sacramento','San Francisco','San Jose','Stockton','Tracy','Vacaville','Vallejo','Yuba City')
 
 foreach($feed in $feeds) {
 $i++
