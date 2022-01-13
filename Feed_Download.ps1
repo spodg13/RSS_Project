@@ -1,15 +1,32 @@
 ﻿#################################
-$cposts=@()
+Function Get-Posts ($anyXMLfeed)
+{ $fields = 'title','description','pubDate','link'
 
-$CBS_Sac_Feed = [xml](Invoke-WebRequest "https://sacramento.cbslocal.com/feed/")
-$CBS_Sac_Feed.rss.channel.item | Where-Object {$_.category."#cdata-section" -match 'Local'}|Select-Object Title, link, pubDate, @{Name="Desc"; Expression={$_.description."#cdata-section"}}|%{
-    $cposts += New-Object psobject -Property @{
-        Title = $_.Title
-        Desc = $_.Desc
-        link = $_.link
-        pubDate = $_.pubDate
+  $posts = foreach($item in $rss.SelectNodes('//item')) {
+    # create dictionary to hold properties of the object we want to construct
+    $properties = [ordered]@{}
+
+    # now let's try to resolve them all
+    foreach($fieldName in $fields) {
+        # use a relative XPath expression to extract relevant child node from current item
+        $value = $item.SelectSingleNode("./${fieldName}")
+
+        # handle content wrapped in CData
+        if($value.HasChildNodes -and $value.ChildNodes[0] -is [System.Xml.XmlCDataSection]){
+            $value = $value.ChildNodes[0]
         }
- }       
+
+        # add node value to dictionary
+        $properties[$fieldName] = $value.InnerText
+    }
+
+    # output resulting object
+    [pscustomobject]$properties
+}
+    return $posts
+}
+
+      
 
 
 
@@ -21,7 +38,7 @@ $i = 0
 
 $doc = New-Object System.Xml.XmlDocument
 $qry = @('accident','arrested','collision','crash','died','dies','fatal','hit-and-run','killing','shooting','suspects','Sutter','victim')
-$cities = @('Antioch','Auburn','Brentwood','Citrus Heights','Elk Grove','Fairfield','Lodi','Oakland','Richmond','Rocklin','Roseville','Sacramento','San Francisco','San Jose','Stockton','Tracy','Vacaville','Vallejo','Yuba City')
+$cities = @('Antioch','Auburn','Brentwood','Citrus Heights','Elk Grove','Fairfield','Lodi','Oakdale','Oakland','Richmond','Rocklin','Roseville','Sacramento','San Francisco','San Jose','Stockton','Tracy','Vacaville','Vallejo','Yuba City')
 
 foreach($feed in $feeds) {
 $i++
@@ -38,36 +55,48 @@ $files = Get-ChildItem "I:\RSS_Project\Feeds\"
 $files
 $posts=@()
    
-## foreach($file in $files){
- ##$rss = [xml](Get-Content $file.FullName)
- $rss = [xml](Get-Content 'I:\RSS_Project\Feeds\feed-1.xml')
+foreach($file in $files){
+ $rss = [xml](Get-Content $file.FullName)
+ ##$rss = [xml](Get-Content 'I:\RSS_Project\Feeds\feed-1.xml')
 
 
- $rss.SelectNodes('//item')|%{
-    $posts += New-Object psobject -Property @{
-        Title = $_.Title
-        Desc = $_.description
-        link = $_.link
-        pubDate = $_.pubDate
-        
+ #$rss.SelectSingleNode('//item')|%{
+ #   $posts += New-Object psobject -Property @{
+ #       Title = If($_.Title."#cdata-section"){$_.Title."#cdata-section"}else{$_.Title}
+ #       Desc = If($_.description."#cdata-section"){$_.description."#cdata-section"}else{$_.Title}
+ #       link = If($_.link."#cdata-section"){$_.link."#cdata-section"}else{$_.link}
+ #       pubDate = If($_.pubDate."#cdata-section"){$_.pubDate."#cdata-section"}else{$_.pubDate}
+ #        }
+ #    }
+
+    $posts += Get-Posts $rss
+
+
+}
+## 
+## \<.?p\> 
+
+$posts | ForEach-Object {
+    if ($_.description -match '<p>') {
+        $_.description=$_.description -replace '(\<.?p\>)',''
         }
+        $_.description
     }
 
-## 
-
-
-$posts = $posts + $cposts
+$posts | Format-Table
+ 
 $filtered = @()
 $filteredlocations = @()
+$filteredposts = @()
 
 
 foreach($term in $qry){
-$filteredposts += $posts | where-object {($_.Desc -Match $term -or $_.Title -match $term)} | Select-Object $_
+$filteredposts += $posts | where-object {($_.description -Match $term -or $_.Title -match $term)} | Select-Object $_
 
 }
 
 foreach($city in $cities){
-$filteredlocations += $filteredposts | where-object {($_.Desc -Match $city -or $_.Title -match $city)} | Select-Object $_
+$filteredlocations += $filteredposts | where-object {($_.description -Match $city -or $_.Title -match $city)} | Select-Object $_
 
 }
 
@@ -101,15 +130,33 @@ TABLE tr:nth-child(odd) td:nth-child(odd){ background: #FFFFFF; }
 ##########################################################
 $strDate = (get-date).ToString("MM-dd-yyyy @ hh:mm tt")
 
-$posts = $posts | ConvertTo-Html -as Table -Property Title, Desc, link -Fragment `
+$HTMLposts = $posts | ConvertTo-Html -as Table -Property Title, description, link -Fragment `
     -PreContent "<h3> All Feeds </h3>"
 
 
-$filtered = $filtered | ConvertTo-Html -as Table -Property Title, Desc, link -Fragment `
+$filtered = $filtered | ConvertTo-Html -as Table -Property Title, description, link -Fragment `
     -PreContent "<h3> Filtered Feed Terms: $qry </h3>"|Out-String
-$filtered = $filtered -replace '(?<weblink>https:\/\/\S*)\<\/td\>', '<a href="${weblink}">Click_Here</a>'
+$filtered = $filtered -replace '(?<weblink>https:\/\/\S*)\<\/td\>', '<a href="${weblink}">Full_Story_Click_Here</a>'
 
-$ResultsHTML = ConvertTo-Html -Body "$posts", "$filtered" -Title "RSS Feed Report" -Head $Header `
+$ResultsHTML = ConvertTo-Html -Body "$HTMLposts", "$filtered" -Title "RSS Feed Report" -Head $Header `
  -PostContent "<br><h3> <br>Locations = $cities <br><br> Created on $strDate  by $env:UserName<br></h3>" `
- |Out-File "a:\TestScript\RSS_Feed.html"
+ |Out-String   ##Out-File "a:\TestScript\RSS_Feed.html"
 
+
+$ToGroup =  'Kathy Maggard <maggark@sutterhealth.org>'
+$CCGroup = 'Darryl Gould <gouldd@sutterhealth.org>' ##For testing
+$LiveRun = $false
+
+if($LiveRun) {
+$props = @{
+    From = $CCGroup 
+    To= $CCGroup
+    CC= $CCGroup
+    Subject = 'RSS Feeds - KCRA and CBS ' 
+    Body = $ResultsHTML 
+    SmtpServer = 'mail.sutterhealth.org' 
+}
+
+
+Send-MailMessage @props -BodyAsHtml
+}
