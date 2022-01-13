@@ -1,4 +1,5 @@
-﻿#################################
+﻿######################################
+
 Function Get-Posts ($anyXMLfeed)
 { $fields = 'title','description','pubDate','link'
 
@@ -26,25 +27,47 @@ Function Get-Posts ($anyXMLfeed)
     return $posts
 }
 
-      
+#######################################
+##
+##  How best to get feeds, 
+##  [xml](Invoke-WebRequest "https://sacramento.cbslocal.com/feed/")
+##  $rss = [xml](Get-Content 'I:\RSS_Project\Feeds\feed-1.xml') from an array of files?
+##
+##
+#######################################
 
-
-
+#######################################
+##
+##   Initialize variables
+##
+#######################################
 
 $feeds = @()
 $feeds = ("https://www.kcra.com/topstories-rss","https://sacramento.cbslocal.com/feed/","https://abc7news.com/feed/","https://www.ksbw.com/topstories-rss")
 $i = 0
-
-
 $doc = New-Object System.Xml.XmlDocument
+$posts=@()
+$filtered = @()
+$filteredlocations = @()
+$filteredposts = @()
+
+####################################
+##
+##  Terms and locations for your purposes
+##
+####################################
+
 $qry = @('accident','arrested','collision','crash','died','dies','fatal','hit-and-run','killing','shooting','suspects','Sutter','victim')
 $cities = @('Antioch','Auburn','Brentwood','Citrus Heights','Elk Grove','Fairfield','Lodi','Oakdale','Oakland','Richmond','Rocklin','Roseville','Sacramento','San Francisco','San Jose','Stockton','Tracy','Vacaville','Vallejo','Yuba City')
 
+####################################
+##
+##  Save each feed in a file
+##
+####################################
+
 foreach($feed in $feeds) {
 $i++
-$i
-$feed
-
 
 $doc.Load("$feed")
 $doc.save("I:\RSS_Project\Feeds\feed-" + $i +".xml")
@@ -53,42 +76,37 @@ $doc.save("I:\RSS_Project\Feeds\feed-" + $i +".xml")
 
 $files = Get-ChildItem "I:\RSS_Project\Feeds\" 
 $files
-$posts=@()
+
+
+####################################
+##
+##  Process files
+##
+####################################
    
 foreach($file in $files){
  $rss = [xml](Get-Content $file.FullName)
  ##$rss = [xml](Get-Content 'I:\RSS_Project\Feeds\feed-1.xml')
-
-
- #$rss.SelectSingleNode('//item')|%{
- #   $posts += New-Object psobject -Property @{
- #       Title = If($_.Title."#cdata-section"){$_.Title."#cdata-section"}else{$_.Title}
- #       Desc = If($_.description."#cdata-section"){$_.description."#cdata-section"}else{$_.Title}
- #       link = If($_.link."#cdata-section"){$_.link."#cdata-section"}else{$_.link}
- #       pubDate = If($_.pubDate."#cdata-section"){$_.pubDate."#cdata-section"}else{$_.pubDate}
- #        }
- #    }
-
+  
     $posts += Get-Posts $rss
-
-
+    
 }
-## 
+## replace any HTML paragraphs
 ## \<.?p\> 
 
 $posts | ForEach-Object {
     if ($_.description -match '<p>') {
         $_.description=$_.description -replace '(\<.?p\>)',''
-        }
-        $_.description
+        }       
     }
 
 $posts | Format-Table
- 
-$filtered = @()
-$filteredlocations = @()
-$filteredposts = @()
 
+####################################
+##
+##  Filter based on $qry terms and $Cities
+##
+####################################
 
 foreach($term in $qry){
 $filteredposts += $posts | where-object {($_.description -Match $term -or $_.Title -match $term)} | Select-Object $_
@@ -100,10 +118,20 @@ $filteredlocations += $filteredposts | where-object {($_.description -Match $cit
 
 }
 
-
+####################################
+##
+##  Capture only unique Titles
+##
+####################################
 
 
 $filtered = $filteredlocations | Sort-Object -Unique -Property Title
+
+####################################
+##
+##  HTML output header
+##
+####################################
 
 
 $Header = @"
@@ -128,6 +156,7 @@ TABLE tr:nth-child(odd) td:nth-child(odd){ background: #FFFFFF; }
 </style>
 "@
 ##########################################################
+
 $strDate = (get-date).ToString("MM-dd-yyyy @ hh:mm tt")
 
 $HTMLposts = $posts | ConvertTo-Html -as Table -Property Title, description, link -Fragment `
@@ -143,18 +172,25 @@ $ResultsHTML = ConvertTo-Html -Body "$HTMLposts", "$filtered" -Title "RSS Feed R
  |Out-String   ##Out-File "a:\TestScript\RSS_Feed.html"
 
 
-$ToGroup =  'Kathy Maggard <maggark@sutterhealth.org>'
-$CCGroup = 'Darryl Gould <gouldd@sutterhealth.org>' ##For testing
-$LiveRun = $false
+$LiveRun = $true
+
+###################
+## Import mail variables
+
+Import-Csv -Path "I:\RSS_Project\Variable.csv" | foreach {
+    New-Variable -Name $_.Name -Value $_.Value -Force
+}
+
+
 
 if($LiveRun) {
 $props = @{
-    From = $CCGroup 
+    From = $CCGroup
     To= $CCGroup
     CC= $CCGroup
-    Subject = 'RSS Feeds - KCRA and CBS ' 
+    Subject = 'RSS Feeds' 
     Body = $ResultsHTML 
-    SmtpServer = 'mail.sutterhealth.org' 
+    SmtpServer = $mailserver 
 }
 
 
