@@ -171,28 +171,29 @@ $ResultsHTML = ConvertTo-Html -Body "$HTMLposts", "$filtered" -Title "RSS Feed R
  -PostContent "<br><h3> <br>Locations = $cities <br><br> Created on $strDate  by $env:UserName<br></h3>" `
  |Out-String   ##Out-File "a:\TestScript\RSS_Feed.html"
 
-
+# For testing purposes - so I don't bombard with emails
 $LiveRun = $true
 
-###################
-## Import mail variables
+####################################
+##
+##  CSV file of mail variables to protect sensitive info
+##  name,value (ToGroup,Tom Jones <anyemail@somewhere.com>)
+##
+####################################
 
 Import-Csv -Path "I:\RSS_Project\Variable.csv" | foreach {
     New-Variable -Name $_.Name -Value $_.Value -Force
 }
 
-
-
 if($LiveRun) {
 $props = @{
     From = $CCGroup
-    To= $CCGroup
+    To= $TOGroup
     CC= $CCGroup
     Subject = 'RSS Feeds' 
     Body = $ResultsHTML 
     SmtpServer = $mailserver 
 }
-
 
 Send-MailMessage @props -BodyAsHtml
 }
