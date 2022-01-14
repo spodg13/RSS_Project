@@ -3,6 +3,8 @@
 Function Get-Posts ($anyXMLfeed)
 { $fields = 'title','description','pubDate','link'
 
+## substitute $anyXMLfeed for $rss
+## Atom line
   $posts = foreach($item in $rss.SelectNodes('//item')) {
     # create dictionary to hold properties of the object we want to construct
     $properties = [ordered]@{}
@@ -29,7 +31,7 @@ Function Get-Posts ($anyXMLfeed)
 
 #######################################
 ##
-##  How best to get feeds, 
+##  How best to get feeds,
 ##  [xml](Invoke-WebRequest "https://sacramento.cbslocal.com/feed/")
 ##  $rss = [xml](Get-Content 'I:\RSS_Project\Feeds\feed-1.xml') from an array of files?
 ##
@@ -74,7 +76,7 @@ $doc.save("I:\RSS_Project\Feeds\feed-" + $i +".xml")
 }
 
 
-$files = Get-ChildItem "I:\RSS_Project\Feeds\" 
+$files = Get-ChildItem "I:\RSS_Project\Feeds\"
 $files
 
 
@@ -83,21 +85,21 @@ $files
 ##  Process files
 ##
 ####################################
-   
+
 foreach($file in $files){
  $rss = [xml](Get-Content $file.FullName)
  ##$rss = [xml](Get-Content 'I:\RSS_Project\Feeds\feed-1.xml')
-  
+
     $posts += Get-Posts $rss
-    
+
 }
 ## replace any HTML paragraphs
-## \<.?p\> 
+## \<.?p\>
 
 $posts | ForEach-Object {
     if ($_.description -match '<p>') {
         $_.description=$_.description -replace '(\<.?p\>)',''
-        }       
+        }
     }
 
 $posts | Format-Table
@@ -190,9 +192,9 @@ $props = @{
     From = $CCGroup
     To= $TOGroup
     CC= $CCGroup
-    Subject = 'RSS Feeds' 
-    Body = $ResultsHTML 
-    SmtpServer = $mailserver 
+    Subject = 'RSS Feeds'
+    Body = $ResultsHTML
+    SmtpServer = $mailserver
 }
 
 Send-MailMessage @props -BodyAsHtml
