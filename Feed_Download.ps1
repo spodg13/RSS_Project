@@ -35,7 +35,7 @@ Function Get-Posts ($anyXMLfeed)
 #######################################
 
 $feeds = @()
-$feeds = ("https://www.kcra.com/topstories-rss","https://sacramento.cbslocal.com/feed/","https://abc7news.com/feed/","https://www.ksbw.com/topstories-rss")#, "https://www.sacbee.com/?widgetName=rssfeed&widgetContentId=6199&getXmlFeed=true")
+$feeds = ("https://www.kcra.com/topstories-rss","https://rss.app/feeds/P9pRXxyOc0VmepAS.xml","https://sacramento.cbslocal.com/feed/","https://sanfrancisco.cbslocal.com/feed/","https://abc7news.com/feed/","https://www.ksbw.com/topstories-rss")#, "https://www.sacbee.com/?widgetName=rssfeed&widgetContentId=6199&getXmlFeed=true")
 $i = 0
 $doc = New-Object System.Xml.XmlDocument
 $posts=@()
@@ -60,7 +60,7 @@ $cities = @('Antioch','Auburn','Brentwood','Citrus Heights','Elk Grove','Fairfie
 
 foreach($feed in $feeds) {
 $i++
-
+$feed
 $doc.Load("$feed")
 $doc.save("I:\RSS_Project\Feeds\feed-" + $i +".xml")
 }
@@ -182,7 +182,7 @@ $ResultsHTML = ConvertTo-Html -Body "$HTMLposts", "$HTMLfiltered" -Title "RSS Fe
  |Out-String   ##Out-File "a:\TestScript\RSS_Feed.html"
 
 # For testing purposes - so I don't bombard with emails
-$LiveRun = $false
+$LiveRun = $true
 
 ####################################
 ##
