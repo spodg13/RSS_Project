@@ -6,3 +6,13 @@
         pubDate = If($_.pubDate."#cdata-section"){$_.pubDate."#cdata-section"}else{$_.pubDate}
          }
      }
+
+##  Future scraping
+##
+##  Regex for two proper names:
+##  (?:\s*\b(?<TwoName>[A-Z][a-z]+\s[A-Z][a-z]+)\b)+
+##
+##  Will need to add alternatives for First Middle Last or First M. Last
+
+$WebResponse = Invoke-WebRequest "https://www.kcra.com/article/3-children-dead-mother-injured-merced-county-apartment/38752253"
+$WebResponse.content
