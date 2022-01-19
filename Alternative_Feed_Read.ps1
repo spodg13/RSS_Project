@@ -16,3 +16,18 @@
 
 $WebResponse = Invoke-WebRequest "https://www.kcra.com/article/3-children-dead-mother-injured-merced-county-apartment/38752253"
 $WebResponse.content
+
+
+<####################################
+    Alternate term and city searching
+
+    instead of -contains $true - try adding boolean property to $posts
+
+
+    $posts | Add-Member -MemberType NoteProperty -Name 'qryMatch' -Value $false
+    update posts.qryMatch = $true
+
+#####################################>
+
+
+($qry|%{$posts.Title.Contains($_)}) -contains $true
