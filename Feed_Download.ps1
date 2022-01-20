@@ -23,19 +23,46 @@ Function Get-Posts ($anyXMLfeed)
 
     # output resulting object
     [pscustomobject]$properties
+    
 }
+    $posts | Add-Member -NotePropertyName 'source' -NotePropertyValue 'rss'
     return $posts
 }
 
+
+Function Get-Tweets ($anyTwitterHandle)
+{
+
+    $Tweets = Get-TwitterStatuses_UserTimeline -screen_name $anyTwitterHandle -count 13 -tweet_mode extended | Select-Object full_text,created_at,user
+    # Put in readable time format
+    $Tweets | ForEach-Object {
+        $_.created_at= [datetime]::ParseExact($_.created_at, "ddd MMM dd HH:mm:ss zzz yyyy", $null)
+        } 
+    
+    $Tweets | Add-Member -NotePropertyName 'link' -NotePropertyValue '-'
+    $Tweets | Add-Member -NotePropertyName 'source' -NotePropertyValue 'tweet'
+    $Tweets | Add-Member -NotePropertyName 'title' -NotePropertyValue '-'
+
+    $Tweets | ForEach-Object { if($_.full_text -match '(?<weblink>\b(https:\/\/[a-zA-Z.\/0-9]*)+)') {
+                                             $_.link = $Matches.weblink }} 
+
+    $Tweets | ForEach-Object {$_.title = $_.user.name}
+    # name of property and expression
+    $posts = $Tweets | Select -Property $_.link, $_.title, $_.source, @{N='description'; E={$_.full_text}},@{N='pubDate';E={$_.created_at}} 
+                             
+    return $posts
+}
 
 #######################################
 ##
 ##   Initialize variables
 ##
 #######################################
-
+$Tweeters = @()
+$Tweeters = ('krcr7','AuburnJournal')
 $feeds = @()
-$feeds = ("https://www.kcra.com/topstories-rss","https://rss.app/feeds/P9pRXxyOc0VmepAS.xml","https://sacramento.cbslocal.com/feed/","https://sanfrancisco.cbslocal.com/feed/","https://abc7news.com/feed/","https://www.ksbw.com/topstories-rss")#, "https://www.sacbee.com/?widgetName=rssfeed&widgetContentId=6199&getXmlFeed=true")
+$feeds = ("https://www.kcra.com/topstories-rss","https://sacramento.cbslocal.com/feed/","https://sanfrancisco.cbslocal.com/feed/","https://abc7news.com/feed/","https://www.ksbw.com/topstories-rss")#, "https://www.sacbee.com/?widgetName=rssfeed&widgetContentId=6199&getXmlFeed=true")
+#"https://rss.app/feeds/P9pRXxyOc0VmepAS.xml",
 $i = 0
 $doc = New-Object System.Xml.XmlDocument
 $posts=@()
@@ -91,6 +118,14 @@ foreach($file in $files){
     $posts += Get-Posts $rss
     
 }
+
+foreach($Tweeter in $Tweeters){
+   
+    $posts += Get-Tweets $Tweeter
+    
+}
+
+
 ## replace any HTML paragraphs
 ## \<.?p\> 
 
@@ -169,11 +204,11 @@ TABLE tr:nth-child(odd) td:nth-child(even){ background: #E5E5E5; }
 
 $strDate = (get-date).ToString("MM-dd-yyyy @ hh:mm tt")
 
-$HTMLposts = $posts | ConvertTo-Html -as Table -Property Title, description, link, pubDate -Fragment `
+$HTMLposts = $posts | ConvertTo-Html -as Table -Property Title, description, link, pubDate, source -Fragment `
     -PreContent "<h3>Feeds pulled $feeds <br> $Subj </h3>"
 
 
-$filtered = $filtered | ConvertTo-Html -as Table -Property Title, description, link, pubDate -Fragment `
+$filtered = $filtered | ConvertTo-Html -as Table -Property Title, description, link, pubDate, source -Fragment `
     -PreContent "<h3> Filtered Feed Terms: $qry </h3>"|Out-String
 $HTMLfiltered = $filtered -replace '(?<weblink>https:\/\/\S*)\<\/td\>', '<a href="${weblink}">Full_Story_Click_Here</a></td>'
 
