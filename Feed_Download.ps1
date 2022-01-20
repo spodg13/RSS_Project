@@ -71,12 +71,9 @@ Function Get-Tweets ($anyTwitterHandle)
 $Tweeters = @()
 $Tweeters = ('krcr7','AuburnJournal')
 $feeds = @()
-<<<<<<< HEAD
 $feeds = ("https://www.kcra.com/topstories-rss","https://sacramento.cbslocal.com/feed/","https://sanfrancisco.cbslocal.com/feed/","https://abc7news.com/feed/","https://www.ksbw.com/topstories-rss")#, "https://www.sacbee.com/?widgetName=rssfeed&widgetContentId=6199&getXmlFeed=true")
 #"https://rss.app/feeds/P9pRXxyOc0VmepAS.xml",
-=======
-$feeds = ("https://www.kcra.com/topstories-rss","https://sacramento.cbslocal.com/feed/","https://abc7news.com/feed/","https://www.ksbw.com/topstories-rss")
->>>>>>> e523d1004f40c4f4b7d2e6f266071ebc4dc9c6f9
+
 $i = 0
 $doc = New-Object System.Xml.XmlDocument
 $posts=@()
@@ -200,23 +197,15 @@ TABLE tr:nth-child(odd) td:nth-child(odd){ background: #FFFFFF; }
 
 $strDate = (get-date).ToString("MM-dd-yyyy @ hh:mm tt")
 
-<<<<<<< HEAD
 $HTMLposts = $posts | ConvertTo-Html -as Table -Property Title, description, link, pubDate, source -Fragment `
     -PreContent "<h3>Feeds pulled $feeds <br> $Subj </h3>"
 
 
 $filtered = $filtered | ConvertTo-Html -as Table -Property Title, description, link, pubDate, source -Fragment `
-=======
-$HTMLposts = $posts | ConvertTo-Html -as Table -Property Title, description, link -Fragment `
-    -PreContent "<h3> All Feeds </h3>"
-
-
-$filtered = $filtered | ConvertTo-Html -as Table -Property Title, description, link -Fragment `
->>>>>>> e523d1004f40c4f4b7d2e6f266071ebc4dc9c6f9
     -PreContent "<h3> Filtered Feed Terms: $qry </h3>"|Out-String
-$filtered = $filtered -replace '(?<weblink>https:\/\/\S*)\<\/td\>', '<a href="${weblink}">Full_Story_Click_Here</a>'
+$HTMLfiltered = $filtered -replace '(?<weblink>https:\/\/\S*)\<\/td\>', '<a href="${weblink}">Full_Story_Click_Here</a></td>'
 
-$ResultsHTML = ConvertTo-Html -Body "$HTMLposts", "$filtered" -Title "RSS Feed Report" -Head $Header `
+$ResultsHTML = ConvertTo-Html -Body "$HTMLposts", "$HTMLfiltered" -Title "RSS Feed Report" -Head $Header `
  -PostContent "<br><h3> <br>Locations = $cities <br><br> Created on $strDate  by $env:UserName<br></h3>" `
  |Out-String   ##Out-File "a:\TestScript\RSS_Feed.html"
 
