@@ -58,7 +58,7 @@ Function Get-Tweets ($anyTwitterHandle)
 
     $Tweets | ForEach-Object {$_.title = $_.user.name}
     # name of property and expression
-    $posts = $Tweets | Select -Property $_.link, $_.title, $_.source, @{N='description'; E={$_.full_text}},@{N='pubDate';E={$_.created_at}} 
+    $posts = $Tweets | Select-Object -property @{Name='description'; Expression={$_.full_text}},@{Name='pubDate';Expression={$_.created_at}},@{Name='title'; Expression={$_.title}},@{Name='link'; Expression={$_.link}},@{Name='source'; Expression={$_.source}} 
                              
     return $posts
 }
@@ -135,10 +135,16 @@ foreach($Tweeter in $Tweeters){
 $posts | ForEach-Object {
     if ($_.description -match '<p>') {
         $_.description=$_.description -replace '(\<.?p\>)',''
-        }
+        }       
     }
 
+$posts | ForEach-Object {
+        $_.pubDate= Get-Date $_.pubDate -Format ("MM-dd-yy hh:mm tt") 
+        }       
+    
+
 $posts | Format-Table
+$posts.Count
 
 ####################################
 ##
@@ -164,6 +170,9 @@ $filteredlocations += $filteredposts | where-object {($_.description -Match $cit
 
 
 $filtered = $filteredlocations | Sort-Object -Unique -Property Title
+$Articles = $filtered.Count
+$Subj = $feeds.Count.ToString() + ' RSS Feeds - ' + $posts.Count + ' posts filtered to ' + $Articles + ' articles' 
+$filtered | Format-List
 
 ####################################
 ##
@@ -189,8 +198,10 @@ color: #343434;
 font-weight: normal;
 font-size: 20px;
 }
-TABLE tr:nth-child(even) td:nth-child(even){  background: #F2F2F2; }
-TABLE tr:nth-child(odd) td:nth-child(odd){ background: #FFFFFF; }
+TABLE tr:nth-child(even) td:nth-child(even){  background: #BBBBBB; }
+TABLE tr:nth-child(odd) td:nth-child(odd){ background: #F2F2F2; }
+TABLE tr:nth-child(even) td:nth-child(odd){ background: #DDDDDD; }
+TABLE tr:nth-child(odd) td:nth-child(even){ background: #E5E5E5; }
 </style>
 "@
 ##########################################################
@@ -203,7 +214,8 @@ $HTMLposts = $posts | ConvertTo-Html -as Table -Property Title, description, lin
 
 $filtered = $filtered | ConvertTo-Html -as Table -Property Title, description, link, pubDate, source -Fragment `
     -PreContent "<h3> Filtered Feed Terms: $qry </h3>"|Out-String
-$HTMLfiltered = $filtered -replace '(?<weblink>https:\/\/\S*)\<\/td\>', '<a href="${weblink}">Full_Story_Click_Here</a></td>'
+
+$HTMLfiltered = $filtered -replace '\>(?<weblink>https:\/\/\S*)\<\/td\>', '><a href="${weblink}">Full_Story_Click_Here</a></td>' 
 
 $ResultsHTML = ConvertTo-Html -Body "$HTMLposts", "$HTMLfiltered" -Title "RSS Feed Report" -Head $Header `
  -PostContent "<br><h3> <br>Locations = $cities <br><br> Created on $strDate  by $env:UserName<br></h3>" `
@@ -226,7 +238,7 @@ Import-Csv -Path "I:\RSS_Project\Variable.csv" | foreach {
 if($LiveRun) {
 $props = @{
     From = $CCGroup
-    To= $TOGroup
+    To= $CCGroup
     CC= $CCGroup
     Subject = 'RSS Feeds'
     Body = $ResultsHTML
@@ -235,3 +247,6 @@ $props = @{
 
 Send-MailMessage @props -BodyAsHtml
 }
+
+$ResultsHTML| Out-File "a:\TestScript\RSS_Feed.html"
+$filtered | Out-File "a:\TestScript\filtered.html"
