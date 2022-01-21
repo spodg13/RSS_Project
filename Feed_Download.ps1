@@ -65,6 +65,20 @@ Function Get-Tweets ($anyTwitterHandle)
 
 #######################################
 ##
+##   Initialize Twitter API variables
+##
+#######################################
+
+$OAuthSettings = @{
+  ApiKey = $env:twApiKey
+  ApiSecret = $env:twApiSecret
+  AccessToken = $env:twAccessToken
+  AccessTokenSecret =$env:twAccessTokenSecret
+}
+#Set-TwitterOAuthSettings @OAuthSettings
+
+#######################################
+##
 ##   Initialize variables
 ##
 #######################################
@@ -87,7 +101,7 @@ $filteredposts = @()
 ##
 ####################################
 
-$qry = @('accident','arrested','collision','crash','died','dies','fatal','hit-and-run','killing','shooting','suspects','Sutter','victim')
+$qry = @('accident','armed','arrested','collision','crash','died','dies','fatal','hit-and-run','killing','shooting','shot','suspects','Sutter','victim')
 $cities = @('Antioch','Auburn','Brentwood','Citrus Heights','Elk Grove','Fairfield','Lodi','Oakdale','Oakland','Richmond','Rocklin','Roseville','Sacramento','San Francisco','San Jose','Stockton','Tracy','Vacaville','Vallejo','Yuba City')
 
 ####################################
@@ -171,7 +185,9 @@ $filteredlocations += $filteredposts | where-object {($_.description -Match $cit
 
 $filtered = $filteredlocations | Sort-Object -Unique -Property Title
 $Articles = $filtered.Count
-$Subj = $feeds.Count.ToString() + ' RSS Feeds - ' + $posts.Count + ' posts filtered to ' + $Articles + ' articles' 
+$Subj = $feeds.Count.ToString() + ' RSS Feeds - ' + $posts.Count + ', Twitter Feeds - ' + $Tweeters.Count + ` 
+        ', posts filtered to ' + $Articles + ' articles'
+         
 $filtered | Format-List
 
 ####################################
@@ -207,18 +223,25 @@ TABLE tr:nth-child(odd) td:nth-child(even){ background: #E5E5E5; }
 ##########################################################
 
 $strDate = (get-date).ToString("MM-dd-yyyy @ hh:mm tt")
+[string]$strT = $Tweeters -join ", "
+[string]$strF = $feeds -join ", " 
+[string]$POEmail ='"mailto:?cc=' + $env:UserName +'@sutterhealth.org&Subject=Media scraping identified a news event of interest&body='
+[string]$POBody = 'Please let us know if you would like any enhanced privacy for this.   Link:'
+$POEmail += $POBody 
+
 
 $HTMLposts = $posts | ConvertTo-Html -as Table -Property Title, description, link, pubDate, source -Fragment `
-    -PreContent "<h3>Feeds pulled $feeds <br> $Subj </h3>"
+    -PreContent "<h3>RSS Feeds pulled: $strF <br> Twitter Accounts: $strT <br> $Subj </h3>"
 
 
 $filtered = $filtered | ConvertTo-Html -as Table -Property Title, description, link, pubDate, source -Fragment `
     -PreContent "<h3> Filtered Feed Terms: $qry </h3>"|Out-String
 
-$HTMLfiltered = $filtered -replace '\>(?<weblink>https:\/\/\S*)\<\/td\>', '><a href="${weblink}">Full_Story_Click_Here</a></td>' 
+$HTMLfiltered = $filtered -replace '\>(?<weblink>https:\/\/\S*)\<\/td\>',`
+ ('><a href="${weblink}">Full_Story_Click_Here</a><br><a href ='+$POEmail+'${weblink}"' + '>Send to PO</a></td>' )
 
-$ResultsHTML = ConvertTo-Html -Body "$HTMLposts", "$HTMLfiltered" -Title "RSS Feed Report" -Head $Header `
- -PostContent "<br><h3> <br>Locations = $cities <br><br> Created on $strDate  by $env:UserName<br></h3>" `
+$ResultsHTML = ConvertTo-Html -Body  "$HTMLfiltered", "$HTMLposts" -Title "RSS Feed Report" -Head $Header `
+ -PostContent "<br><h3> <br>Locations = $cities <br>RSS Feeds pulled: $strF <br> Twitter Accounts: $strT <br> <br> Created on $strDate  by $env:UserName<br></h3>" `
  |Out-String   ##Out-File "a:\TestScript\RSS_Feed.html"
 
 # For testing purposes - so I don't bombard with emails
@@ -238,7 +261,7 @@ Import-Csv -Path "I:\RSS_Project\Variable.csv" | foreach {
 if($LiveRun) {
 $props = @{
     From = $CCGroup
-    To= $CCGroup
+    To= $TOGroup
     CC= $CCGroup
     Subject = 'RSS Feeds'
     Body = $ResultsHTML
