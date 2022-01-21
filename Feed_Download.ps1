@@ -225,8 +225,8 @@ TABLE tr:nth-child(odd) td:nth-child(even){ background: #E5E5E5; }
 $strDate = (get-date).ToString("MM-dd-yyyy @ hh:mm tt")
 [string]$strT = $Tweeters -join ", "
 [string]$strF = $feeds -join ", " 
-[string]$POEmail ='"mailto:?cc=' + $env:UserName +'@sutterhealth.org&Subject=Media scraping identified a news event of interest&body='
-[string]$POBody = 'Please let us know if you would like any enhanced privacy for this.   Link:'
+[string]$POEmail ='"mailto:?cc=' + $env:UserName +'@sutterhealth.org&Subject=Media scraping identified a news event of interest [encrypt]&body='
+[string]$POBody = 'Please let us know if you would like any enhanced privacy for this.   Link:  '
 $POEmail += $POBody 
 
 
