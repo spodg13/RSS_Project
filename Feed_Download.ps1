@@ -250,7 +250,7 @@ $ResultsHTML = ConvertTo-Html -Body  "$HTMLfiltered", "$HTMLposts" -Title "RSS F
 
  $ResultsF = ConvertTo-Html -Body "$FullHTML","$HTMLposts" -Title "RSS Feed Report" -Head $Header `
  -PostContent "<br><h3> <br>Locations = $cities <br>RSS Feeds pulled: $strF <br> Twitter Accounts: $strT <br> <br> Created on $strDate  by $env:UserName<br></h3>" `
- |Out-File "a:\TestScript\RSS_Feed.html"
+ |Out-File "a:\TestScript\RSS_Feed_test.html"
 
 # For testing purposes - so I don't bombard with emails
 $LiveRun = $true
