@@ -31,15 +31,6 @@ Function Get-Posts ($anyXMLfeed)
     return $posts
 }
 
-#######################################
-##
-##  How best to get feeds,
-##  [xml](Invoke-WebRequest "https://sacramento.cbslocal.com/feed/")
-##  $rss = [xml](Get-Content 'I:\RSS_Project\Feeds\feed-1.xml') from an array of files?
-##
-##
-#######################################
-
 Function Get-Tweets ($anyTwitterHandle)
 {
 
@@ -107,6 +98,8 @@ $cities = @('Antioch','Auburn','Brentwood','Citrus Heights','Elk Grove','Fairfie
 ####################################
 ##
 ##  Save each feed in a file
+##  $rss = [xml](Get-Content 'I:\RSS_Project\Feeds\feed-1.xml') from an array of files? -or
+##  $rss=[xml](Invoke-WebRequest "https://sacramento.cbslocal.com/feed/")
 ##
 ####################################
 
@@ -129,17 +122,12 @@ $files
 ####################################
 
 foreach($file in $files){
- $rss = [xml](Get-Content $file.FullName)
- ##$rss = [xml](Get-Content 'I:\RSS_Project\Feeds\feed-1.xml')
-
+    $rss = [xml](Get-Content $file.FullName)
     $posts += Get-Posts $rss
-
 }
 
 foreach($Tweeter in $Tweeters){
-   
     $posts += Get-Tweets $Tweeter
-    
 }
 
 
