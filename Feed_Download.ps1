@@ -229,6 +229,8 @@ $strDate = (get-date).ToString("MM-dd-yyyy @ hh:mm tt")
 [string]$POBody = 'Please let us know if you would like any enhanced privacy for this. %0D%0A Link:  '
 $POEmail += $POBody 
 
+##  %0D%0A for carriage return
+##########################################################
 
 $HTMLposts = $posts | ConvertTo-Html -as Table -Property Title, description, link, pubDate, source -Fragment `
     -PreContent "<h3>RSS Feeds pulled: $strF <br> Twitter Accounts: $strT <br> $Subj </h3>"
