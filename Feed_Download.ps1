@@ -61,10 +61,10 @@ Function Get-Tweets ($anyTwitterHandle)
 #######################################
 
 $OAuthSettings = @{
-  ApiKey = $env:twApiKey
-  ApiSecret = $env:twApiSecret
-  AccessToken = $env:twAccessToken
-  AccessTokenSecret =$env:twAccessTokenSecret
+    ApiKey = $env:twApiKey
+    ApiSecret = $env:twApiSecret
+    AccessToken = $env:twAccessToken
+    AccessTokenSecret =$env:twAccessTokenSecret
 }
 #Set-TwitterOAuthSettings @OAuthSettings
 
@@ -110,10 +110,8 @@ $doc.Load("$feed")
 $doc.save("I:\RSS_Project\Feeds\feed-" + $i +".xml")
 }
 
-
 $files = Get-ChildItem "I:\RSS_Project\Feeds\"
 $files
-
 
 ####################################
 ##
@@ -137,12 +135,12 @@ foreach($Tweeter in $Tweeters){
 $posts | ForEach-Object {
     if ($_.description -match '<p>') {
         $_.description=$_.description -replace '(\<.?p\>)',''
-        }       
-    }
+    }       
+}
 
 $posts | ForEach-Object {
-        $_.pubDate= Get-Date $_.pubDate -Format ("MM-dd-yy hh:mm tt") 
-        }       
+    $_.pubDate= Get-Date $_.pubDate -Format ("MM-dd-yy hh:mm tt") 
+}       
     
 
 $posts | Format-Table
@@ -155,13 +153,11 @@ $posts.Count
 ####################################
 
 foreach($term in $qry){
-$filteredposts += $posts | where-object {($_.description -Match $term -or $_.Title -match $term)} | Select-Object $_
-
+    $filteredposts += $posts | where-object {($_.description -Match $term -or $_.Title -match $term)} | Select-Object $_
 }
 
 foreach($city in $cities){
-$filteredlocations += $filteredposts | where-object {($_.description -Match $city -or $_.Title -match $city)} | Select-Object $_
-
+    $filteredlocations += $filteredposts | where-object {($_.description -Match $city -or $_.Title -match $city)} | Select-Object $_
 }
 
 ####################################
@@ -183,7 +179,6 @@ $filtered | Format-List
 ##  HTML output header
 ##
 ####################################
-
 
 $Header = @"
 <style>
@@ -228,19 +223,19 @@ $filtered = $filtered | ConvertTo-Html -as Table -Property Title, description, l
     -PreContent "<h3> Filtered Feed Terms: $qry </h3>"|Out-String
 
 $HTMLfiltered = $filtered -replace '\>(?<weblink>https:\/\/\S*)\<\/td\>',`
- ('><a href="${weblink}">Full_Story_Click_Here</a><br><a href ='+$POEmail+'${weblink}"' + '>Send to PO</a></td>' )
+    ('><a href="${weblink}">Full_Story_Click_Here</a><br><a href ='+$POEmail+'${weblink}"' + '>Send to PO</a></td>' )
 
  $FullHTML = $filtered | -replace '<tr><td>(?<title>[^\<]+)<\/td><td>(?<desc>[^\<]+)<\/td><td>(?<weblink>[^\<]+)\<\/td><td>(?<pubDate>[^\<]+)',`
- ('<tr><td>${title}</td><td>${desc}</td><td><a href="${weblink}">Full_Story_Click_Here</a><br><a href='+$POEmail+'${weblink}%0D%0A%0D%0A${desc}%0D%0APublished on:${pubDate}"'`
- + '>Send to PO</a></td>')
+    ('<tr><td>${title}</td><td>${desc}</td><td><a href="${weblink}">Full_Story_Click_Here</a><br><a href='+$POEmail+'${weblink}%0D%0A%0D%0A${desc}%0D%0APublished on:${pubDate}"'`
+    + '>Send to PO</a></td>')
 
 $ResultsHTML = ConvertTo-Html -Body  "$HTMLfiltered", "$HTMLposts" -Title "RSS Feed Report" -Head $Header `
- -PostContent "<br><h3> <br>Locations = $cities <br>RSS Feeds pulled: $strF <br> Twitter Accounts: $strT <br> <br> Created on $strDate  by $env:UserName<br></h3>" `
- |Out-String   ##Out-File "a:\TestScript\RSS_Feed.html"
+    -PostContent "<br><h3> <br>Locations = $cities <br>RSS Feeds pulled: $strF <br> Twitter Accounts: $strT <br> <br> Created on $strDate  by $env:UserName<br></h3>" `
+    |Out-String   ##Out-File "a:\TestScript\RSS_Feed.html"
 
  $ResultsF = ConvertTo-Html -Body "$FullHTML","$HTMLposts" -Title "RSS Feed Report" -Head $Header `
- -PostContent "<br><h3> <br>Locations = $cities <br>RSS Feeds pulled: $strF <br> Twitter Accounts: $strT <br> <br> Created on $strDate  by $env:UserName<br></h3>" `
- |Out-File "a:\TestScript\RSS_Feed_test.html"
+    -PostContent "<br><h3> <br>Locations = $cities <br>RSS Feeds pulled: $strF <br> Twitter Accounts: $strT <br> <br> Created on $strDate  by $env:UserName<br></h3>" `
+    |Out-File "a:\TestScript\RSS_Feed_test.html"
 
 # For testing purposes - so I don't bombard with emails
 $LiveRun = $true
@@ -257,16 +252,15 @@ Import-Csv -Path "I:\RSS_Project\Variable.csv" | foreach {
 }
 
 if($LiveRun) {
-$props = @{
-    From = $CCGroup
-    To= $TOGroup
-    CC= $CCGroup
-    Subject = 'RSS Feeds'
-    Body = $ResultsHTML
-    SmtpServer = $mailserver
-}
-
-Send-MailMessage @props -BodyAsHtml
+    $props = @{
+        From = $CCGroup
+        To= $TOGroup
+        CC= $CCGroup
+        Subject = 'RSS Feeds'
+        Body = $ResultsHTML
+        SmtpServer = $mailserver
+    }
+    Send-MailMessage @props -BodyAsHtml
 }
 
 $ResultsHTML| Out-File "a:\TestScript\RSS_Feed.html"
