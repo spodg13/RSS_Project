@@ -209,8 +209,9 @@ $strDate = (get-date).ToString("MM-dd-yyyy @ hh:mm tt")
 [string]$strT = $Tweeters -join ", "
 [string]$strF = $feeds -join ", " 
 [string]$POEmail ='"mailto:?cc=' + $env:UserName +'@sutterhealth.org&Subject=Media scraping identified a news event of interest [encrypt]&body='
-[string]$POBody = 'Please let us know if you would like any enhanced privacy for this. %0D%0A Link:  '
-$POEmail += $POBody 
+[string]$POBody = 'Please let us know if you would like any enhanced privacy for this. %0D%0A%0D%0ALink:  '
+$POEmail += $POBody
+[string]$POData ='Name: %0D%0AMRN: %0D%0ALocal Only: Yes No %0D%0ANational Coverage: Yes No%0D%0AOther Media links: "'  
 
 ##  %0D%0A for carriage return
 ##########################################################
@@ -222,23 +223,31 @@ $HTMLposts = $posts | ConvertTo-Html -as Table -Property Title, description, lin
 $filtered = $filtered | ConvertTo-Html -as Table -Property Title, description, link, pubDate, source -Fragment `
     -PreContent "<h3> Filtered Feed Terms: $qry </h3>"|Out-String
 
-$HTMLfiltered = $filtered -replace '\>(?<weblink>https:\/\/\S*)\<\/td\>',`
-    ('><a href="${weblink}">Full_Story_Click_Here</a><br><a href ='+$POEmail+'${weblink}"' + '>Send to PO</a></td>' )
+$HTMLfiltered = $filtered  -replace '<tr><td>(?<title>[^\<]+)<\/td><td>(?<desc>[^\<]+)<\/td><td>(?<weblink>[^\<]+)\<\/td><td>(?<pubDate>[^\<]+)', `
+    ('<tr><td>${title}</td><td>${desc}</td><td><a href="${weblink}">Full_Story_Click_Here</a><br><a href='+$POEmail+'${weblink}%0D%0A%0D%0ATitle: ${title}%0D%0ADescription: ${desc}%0D%0APublished on: ${pubDate}%0D%0A%0D%0A'`
+    + $POData + '>Send to PO</a></td><td>${pubDate}</td>')
 
- $FullHTML = $filtered | -replace '<tr><td>(?<title>[^\<]+)<\/td><td>(?<desc>[^\<]+)<\/td><td>(?<weblink>[^\<]+)\<\/td><td>(?<pubDate>[^\<]+)',`
-    ('<tr><td>${title}</td><td>${desc}</td><td><a href="${weblink}">Full_Story_Click_Here</a><br><a href='+$POEmail+'${weblink}%0D%0A%0D%0A${desc}%0D%0APublished on:${pubDate}"'`
-    + '>Send to PO</a></td>')
+<### Test HTML section
+
+$FullHTML = $filtered  -replace '<tr><td>(?<title>[^\<]+)<\/td><td>(?<desc>[^\<]+)<\/td><td>(?<weblink>[^\<]+)\<\/td><td>(?<pubDate>[^\<]+)', `
+    ('<tr><td>${title}</td><td>${desc}</td><td><a href="${weblink}">Full_Story_Click_Here</a><br><a href='+$POEmail+'${weblink}%0D%0A%0D%0ATitle: ${title}%0D%0ADescription: ${desc}%0D%0APublished on: ${pubDate}%0D%0A'`
+    + $POData + '>Send to PO</a></td><td>${pubDate}</td>')
+
+$ResultsF = ConvertTo-Html -Body "$FullHTML","$HTMLposts" -Title "RSS Feed Report" -Head $Header `
+    -PostContent "<br><h3> <br>Locations = $cities <br>RSS Feeds pulled: $strF <br> Twitter Accounts: $strT <br> <br> Created on $strDate  by $env:UserName<br></h3>" `
+    |Out-File "a:\TestScript\RSS_Feed_test.html"
+
+##########>
+
 
 $ResultsHTML = ConvertTo-Html -Body  "$HTMLfiltered", "$HTMLposts" -Title "RSS Feed Report" -Head $Header `
     -PostContent "<br><h3> <br>Locations = $cities <br>RSS Feeds pulled: $strF <br> Twitter Accounts: $strT <br> <br> Created on $strDate  by $env:UserName<br></h3>" `
     |Out-String   ##Out-File "a:\TestScript\RSS_Feed.html"
 
- $ResultsF = ConvertTo-Html -Body "$FullHTML","$HTMLposts" -Title "RSS Feed Report" -Head $Header `
-    -PostContent "<br><h3> <br>Locations = $cities <br>RSS Feeds pulled: $strF <br> Twitter Accounts: $strT <br> <br> Created on $strDate  by $env:UserName<br></h3>" `
-    |Out-File "a:\TestScript\RSS_Feed_test.html"
+ 
 
 # For testing purposes - so I don't bombard with emails
-$LiveRun = $true
+$LiveRun = $false
 
 ####################################
 ##
