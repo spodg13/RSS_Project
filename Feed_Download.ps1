@@ -224,7 +224,7 @@ $filtered = $filtered | ConvertTo-Html -as Table -Property Title, description, l
     -PreContent "<h3> Filtered Feed Terms: $qry </h3>"|Out-String
 
 $HTMLfiltered = $filtered  -replace '<tr><td>(?<title>[^\<]+)<\/td><td>(?<desc>[^\<]+)<\/td><td>(?<weblink>[^\<]+)\<\/td><td>(?<pubDate>[^\<]+)', `
-    ('<tr><td>${title}</td><td>${desc}</td><td><a href="${weblink}">Full_Story_Click_Here</a><br><a href='+$POEmail+'${weblink}%0D%0A%0D%0ATitle: ${title}%0D%0ADescription: ${desc}%0D%0APublished on: ${pubDate}%0D%0A%0D%0A'`
+    ('<tr><td>${title}</td><td>${desc}</td><td><a href="${weblink}">Full_Story_Click_Here</a><br><a href='+$POEmail+'${weblink}%0D%0A%0D%0ATitle: ${title}%0D%0ADescription: ${desc}%0D%0APublished on: ${pubDate}%0D%0A'`
     + $POData + '>Send to PO</a></td><td>${pubDate}</td>')
 
 <### Test HTML section
@@ -247,7 +247,7 @@ $ResultsHTML = ConvertTo-Html -Body  "$HTMLfiltered", "$HTMLposts" -Title "RSS F
  
 
 # For testing purposes - so I don't bombard with emails
-$LiveRun = $false
+$LiveRun = $true
 
 ####################################
 ##
