@@ -53,6 +53,18 @@ Function Get-Tweets ($anyTwitterHandle)
                              
     return $posts
 }
+Function Rename-LatestNews
+{
+    ## Takes newest date stamped feed and copies it to unstamped RSS_Feed
+    ## Deletes any date stamped feed older than 5 days
+    $Path = "\\dcms2ms\Privacy Audit and Logging\TestScript\"
+    $Item = Get-ChildItem -Path $Path | Where-Object {$_.Name -match 'RSS_Feed' }| Sort-Object LastWriteTime -Descending |Select-Object -First 1
+   
+   
+    Copy-Item $Item.FullName -Destination "\\dcms2ms\Privacy Audit and Logging\TestScript\RSS_Feed.html"
+    ## Remove feeds older than 5 days
+    ##Remove-Item -Path $Path | Where-Object {($_.Name -match 'RSS_Feed') -and ($_.LastWriteTime -lt (Get-Date).AddDays(-5))}  
+}
 
 #######################################
 ##
@@ -93,7 +105,10 @@ $filteredposts = @()
 ####################################
 
 $qry = @('accident','armed','arrested','collision','crash','died','dies','fatal','hit-and-run','killing','shooting','shot','suspects','Sutter','victim')
-$cities = @('Antioch','Auburn','Brentwood','Citrus Heights','Elk Grove','Fairfield','Lodi','Oakdale','Oakland','Richmond','Rocklin','Roseville','Sacramento','San Francisco','San Jose','Stockton','Tracy','Vacaville','Vallejo','Yuba City')
+#$cities = @('Antioch','Auburn','Brentwood','Citrus Heights','Elk Grove','Fairfield','Lodi','Oakdale','Oakland','Richmond','Rocklin','Roseville','Sacramento','San Francisco','San Jose','Stockton','Tracy','Vacaville','Vallejo','Yuba City')
+$cities = Import-Csv -Path "\\dcms2ms\Privacy Audit and Logging\TestScript\Cities.csv" | Select-Object -Property Cities
+
+
 
 ####################################
 ##
@@ -277,6 +292,10 @@ if($LiveRun) {
     }
     Send-MailMessage @props -BodyAsHtml
 }
+$strDate = (get-date).ToString("MM-dd-yyyy_tt")
+$FileName = "\\dcms2ms\Privacy Audit and Logging\TestScript\RSS_Feed_" + $strDate +".html"
 
-$ResultsHTML| Out-File "a:\TestScript\RSS_Feed.html"
-$filtered | Out-File "a:\TestScript\filtered.html"
+$ResultsHTML| Out-File $FileName
+$filtered | Out-File "\\dcms2ms\Privacy Audit and Logging\TestScript\filtered.html"
+Rename-LatestNews
+
