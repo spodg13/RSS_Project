@@ -3,8 +3,9 @@
 Function Get-Posts ($anyXMLfeed)
 { $fields = 'title','description','pubDate','link'
 
-## substitute $anyXMLfeed for $rss
-## Atom line
+## Function created with major assist by Mathias R Jessen
+## https://stackoverflow.com/users/712649/mathias-r-jessen
+## ## Atom line
   $posts = foreach($item in $rss.SelectNodes('//item')) {
     # create dictionary to hold properties of the object we want to construct
     $properties = [ordered]@{}
@@ -39,7 +40,7 @@ Function Get-Tweets ($anyTwitterHandle)
     $Tweets | ForEach-Object {
         $_.created_at= [datetime]::ParseExact($_.created_at, "ddd MMM dd HH:mm:ss zzz yyyy", $null)
         } 
-    
+    # Add properties to match RSS feed posts
     $Tweets | Add-Member -NotePropertyName 'link' -NotePropertyValue '-'
     $Tweets | Add-Member -NotePropertyName 'source' -NotePropertyValue 'tweet'
     $Tweets | Add-Member -NotePropertyName 'title' -NotePropertyValue '-'
