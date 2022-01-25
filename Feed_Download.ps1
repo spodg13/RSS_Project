@@ -209,10 +209,16 @@ TABLE tr:nth-child(odd) td:nth-child(even){ background: #E5E5E5; }
 $strDate = (get-date).ToString("MM-dd-yyyy @ hh:mm tt")
 [string]$strT = $Tweeters -join ", "
 [string]$strF = $feeds -join ", " 
+[string]$CRTab = '%0D%0A     '
+[string]$CR = '%0D%0A'
+[string]$DCR ='%0D%0A%0D%0A'
 [string]$POEmail ='"mailto:?cc=' + $env:UserName +'@sutterhealth.org&Subject=Media scraping identified a news event of interest [encrypt]&body='
-[string]$POBody = 'Please let us know if you would like any enhanced privacy for this. %0D%0A%0D%0ALink:  '
+[string]$POBody = 'Please let us know if you would like any enhanced privacy for this. ' +$DCR + 'Link:  '
 $POEmail += $POBody
-[string]$POData ='Name: %0D%0AMRN: %0D%0ALocal Only: Yes No %0D%0ANational Coverage: Yes No%0D%0AOther Media links: "'  
+[string]$POData = $CR + 'Name: ' + $CR + 'MRN: ' +$DCR + 'Scoring Grid:' +$DCR +'Media Coverage: ' + $CRTab + '1-Local Only' + $CRTab +'2-National Coverage' +$CRTab +'3-Global' +$CR +'Other Media links: '
+$POData += $DCR +'Identifier Sensitivity:' + $CRTab + '2-Poses privacy violation risk' + $DCR +'Patient Presence on campus:' + $CRTab + '0-Unk' + $CRTab + '1-Requested to not be known' + $CRTab +'2-Rumor' + $CRTab + '3-Known'
+$POData += $DCR + 'Patient status:' + $CRTab + '1-Temporary Importance' +$CRTab + '2-Famous Individual' + $CRTab + '3-Famous Globally' + $DCR + 'Total:    "'
+
 
 ##  %0D%0A for carriage return
 ##########################################################
@@ -248,7 +254,7 @@ $ResultsHTML = ConvertTo-Html -Body  "$HTMLfiltered", "$HTMLposts" -Title "RSS F
  
 
 # For testing purposes - so I don't bombard with emails
-$LiveRun = $true
+$LiveRun = $false
 
 ####################################
 ##
