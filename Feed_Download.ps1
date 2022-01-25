@@ -59,11 +59,10 @@ Function Rename-LatestNews
     ## Deletes any date stamped feed older than 5 days
     $Path = "\\dcms2ms\Privacy Audit and Logging\TestScript\"
     $Item = Get-ChildItem -Path $Path | Where-Object {$_.Name -match 'RSS_Feed' }| Sort-Object LastWriteTime -Descending |Select-Object -First 1
-   
-   
     Copy-Item $Item.FullName -Destination "\\dcms2ms\Privacy Audit and Logging\TestScript\RSS_Feed.html"
+   
     ## Remove feeds older than 5 days
-    ##Remove-Item -Path $Path | Where-Object {($_.Name -match 'RSS_Feed') -and ($_.LastWriteTime -lt (Get-Date).AddDays(-5))}  
+    Remove-Item -Path $Path | Where-Object {($_.Name -like 'RSS_Feed*.html') -and ($_.LastWriteTime -lt (Get-Date).AddDays(-5))}  
 }
 
 #######################################
@@ -107,8 +106,6 @@ $filteredposts = @()
 $qry = @('accident','armed','arrested','collision','crash','died','dies','fatal','hit-and-run','killing','shooting','shot','suspects','Sutter','victim')
 #$cities = @('Antioch','Auburn','Brentwood','Citrus Heights','Elk Grove','Fairfield','Lodi','Oakdale','Oakland','Richmond','Rocklin','Roseville','Sacramento','San Francisco','San Jose','Stockton','Tracy','Vacaville','Vallejo','Yuba City')
 $cities = Import-Csv -Path "\\dcms2ms\Privacy Audit and Logging\TestScript\Cities.csv" | Select-Object -Property Cities
-
-
 
 ####################################
 ##
