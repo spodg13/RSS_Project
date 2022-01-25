@@ -60,9 +60,13 @@ Function Rename-LatestNews
     $Path = "\\dcms2ms\Privacy Audit and Logging\TestScript\"
     $Item = Get-ChildItem -Path $Path | Where-Object {$_.Name -match 'RSS_Feed' }| Sort-Object LastWriteTime -Descending |Select-Object -First 1
     Copy-Item $Item.FullName -Destination "\\dcms2ms\Privacy Audit and Logging\TestScript\RSS_Feed.html"
-   
+    <#
+        For combining - could use: loop through array, item 0 was just populated
+        $Comb=Get-Content $Item.FullName[1-4]|Out-file RSS_Feed_Comb.html
+
+    #>
     ## Remove feeds older than 5 days
-    Remove-Item -Path $Path | Where-Object {($_.Name -like 'RSS_Feed*.html') -and ($_.LastWriteTime -lt (Get-Date).AddDays(-5))}  
+    Get-ChildItem | Where-Object {($_.Name -like 'RSS_Feed*.html') -and ($_.LastWriteTime -lt (Get-Date).AddDays(-5))}  | Remove-Item
 }
 
 #######################################
@@ -105,7 +109,7 @@ $filteredposts = @()
 
 $qry = @('accident','armed','arrested','collision','crash','died','dies','fatal','hit-and-run','killing','shooting','shot','suspects','Sutter','victim')
 #$cities = @('Antioch','Auburn','Brentwood','Citrus Heights','Elk Grove','Fairfield','Lodi','Oakdale','Oakland','Richmond','Rocklin','Roseville','Sacramento','San Francisco','San Jose','Stockton','Tracy','Vacaville','Vallejo','Yuba City')
-$cities = Import-Csv -Path "\\dcms2ms\Privacy Audit and Logging\TestScript\Cities.csv" | Select-Object -Property Cities
+$cities = Import-Csv -Path "\\dcms2ms\Privacy Audit and Logging\TestScript\Cities.csv" | Select-Object -Property Name
 
 ####################################
 ##
@@ -169,7 +173,7 @@ foreach($term in $qry){
 }
 
 foreach($city in $cities){
-    $filteredlocations += $filteredposts | where-object {($_.description -Match $city -or $_.Title -match $city)} | Select-Object $_
+    $filteredlocations += $filteredposts | where-object {($_.description -Match $city.name -or $_.Title -match $city.name)} | Select-Object $_
 }
 
 ####################################
@@ -289,10 +293,10 @@ if($LiveRun) {
     }
     Send-MailMessage @props -BodyAsHtml
 }
-$strDate = (get-date).ToString("MM-dd-yyyy_tt")
+$strDate = (get-date).ToString("MM-dd-yyyy_hhmm_tt")
 $FileName = "\\dcms2ms\Privacy Audit and Logging\TestScript\RSS_Feed_" + $strDate +".html"
 
-$ResultsHTML| Out-File $FileName
+$ResultsHTML| Out-File $FileName 
 $filtered | Out-File "\\dcms2ms\Privacy Audit and Logging\TestScript\filtered.html"
 Rename-LatestNews
 
