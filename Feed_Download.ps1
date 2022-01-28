@@ -125,6 +125,7 @@ $i++
 
 $doc.Load("$feed")
 $doc.save("I:\RSS_Project\Feeds\feed-" + $i +".xml")
+$feed
 }
 
 $files = Get-ChildItem "I:\RSS_Project\Feeds\"
@@ -137,6 +138,7 @@ $files
 ####################################
 
 foreach($file in $files){
+    $file
     $rss = [xml](Get-Content $file.FullName)
     $posts += Get-Posts $rss
 }
@@ -169,11 +171,14 @@ $posts.Count
 ##
 ####################################
 
+Write-host 'Filtering terms'
 foreach($term in $qry){
     $filteredposts += $posts | where-object {($_.description -Match $term -or $_.Title -match $term)} | Select-Object $_
 }
 
+Write-host 'Filtering Cities'
 foreach($city in $cities){
+       
     $filteredlocations += $filteredposts | where-object {($_.description -Match $city.name -or $_.Title -match $city.name)} | Select-Object $_
 }
 
@@ -228,12 +233,22 @@ $strDate = (get-date).ToString("MM-dd-yyyy @ hh:mm tt")
 [string]$CRTab = '%0D%0A     '
 [string]$CR = '%0D%0A'
 [string]$DCR ='%0D%0A%0D%0A'
-[string]$POEmail ='"mailto:?cc=' + $env:UserName +'@sutterhealth.org&Subject=Media scraping identified a news event of interest [encrypt]&body='
-[string]$POBody = 'Please let us know if you would like any enhanced privacy for this. ' +$DCR + 'Link:  '
+#[string]$POEmail ='"mailto:?cc=' + $env:UserName +'@sutterhealth.org&Subject=Media scraping identified a news event of interest [encrypt]&body='
+[string]$POEmail ='"mailto:?Subject=Media scraping identified a news event of interest [encrypt]&body='
+[string]$POBody = 'Based on the information below, and utilizing the HPP grid, Auditing and Monitoring Team would recommend the following: ' 
+$POBody += $DCR + $DCR + 'Recommend:' +$CRTab +'BTG' + $CRTab + 'No BTG' + $DCR + 'Link:  '
 $POEmail += $POBody
-[string]$POData = $CR + 'Name: ' + $CR + 'MRN: ' +$DCR + 'Scoring Grid:' +$DCR +'Media Coverage: ' + $CRTab + '1-Local Only' + $CRTab +'2-National Coverage' +$CRTab +'3-Global' +$CR +'Other Media links: '
-$POData += $DCR +'Identifier Sensitivity:' + $CRTab + '2-Poses privacy violation risk' + $DCR +'Patient Presence on campus:' + $CRTab + '0-Unk' + $CRTab + '1-Requested to not be known' + $CRTab +'2-Rumor' + $CRTab + '3-Known'
-$POData += $DCR + 'Patient status:' + $CRTab + '1-Temporary Importance' +$CRTab + '2-Famous Individual' + $CRTab + '3-Famous Globally' + $DCR + 'Total:    "'
+[string]$POData = $CR + 'Name: ' + $CR + 'MRN: ' +$DCR + 'Scoring Grid:' +$DCR +'Media Exposure: ' + $CRTab + 'Local/US/International Coverage (Y)' +$DCR +'Other Media links: '
+$POData += $DCR + 'Patient status:' + $CRTab + 'Patient is part of the general population' + $CRTab + 'Patient is well known or recognizable by workforce and general public (Y)'
+$POData += $DCR +'PHI Sensitivity:' + $CRTab + 'No sensitive PHI Identifier' + $CRTab +'Sensitive PHI identifier (Y)' + $DCR
+$POData += 'Risk Exposure:' +$CRTab + 'No or low risk or harm associated with exposure' + $CRTab + 'Exposure may pose privacy violation and potential harm to patient and staff (Y)' + $DCR
+$POData += 'Total Yes Responses:      ' + $DCR + '1-2 Yes: Privacy Officer Discretion' + $CR + '3-4 Yes: Patient is HPP' + $DCR 
+#$POData += 'Options:' + $DCR + 'Temporary- If the patient is deemed a HPP, they are placed on the Protenus watch list for 30 days. Privacy Officer can request BTG depending on circumstances of the case. ' 
+#$POData += $DCR + 'Permanent- If the PO determines it is a permanent HPP, then the patient is placed on the Protenus watch list permanently and BTG is applied. "'  
+$POData += 'Options:' + $DCR + 'Temporary-Protenus watch list for 30 days. BTG-PO discretion.' 
+$POData += $DCR + 'Permanent-Protenus watch list permanently and BTG is applied."'  
+
+
 
 
 ##  %0D%0A for carriage return
@@ -286,7 +301,7 @@ Import-Csv -Path "I:\RSS_Project\Variable.csv" | foreach {
 if($LiveRun) {
     $props = @{
         From = $CCGroup
-        To= $TOGroup
+        To= $CCGroup
         CC= $CCGroup
         Subject = 'RSS Feeds'
         Body = $ResultsHTML
