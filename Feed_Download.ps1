@@ -124,6 +124,7 @@ $i++
 
 $doc.Load("$feed")
 $doc.save("I:\RSS_Project\Feeds\feed-" + $i +".xml")
+$feed
 }
 
 $files = Get-ChildItem "I:\RSS_Project\Feeds\"
@@ -136,6 +137,7 @@ $files
 ####################################
 
 foreach($file in $files){
+    $file
     $rss = [xml](Get-Content $file.FullName)
     $posts += Get-Posts $rss
 }
@@ -230,7 +232,8 @@ $strDate = (get-date).ToString("MM-dd-yyyy @ hh:mm tt")
 [string]$CRTab = '%0D%0A     '
 [string]$CR = '%0D%0A'
 [string]$DCR ='%0D%0A%0D%0A'
-[string]$POEmail ='"mailto:?cc=' + $env:UserName +'@sutterhealth.org&Subject=Media scraping identified a news event of interest [encrypt]&body='
+#[string]$POEmail ='"mailto:?cc=' + $env:UserName +'@sutterhealth.org&Subject=Media scraping identified a news event of interest [encrypt]&body='
+[string]$POEmail ='"mailto:?Subject=Media scraping identified a news event of interest [encrypt]&body='
 [string]$POBody = 'Based on the information below, and utilizing the HPP grid, Auditing and Monitoring Team would recommend the following: ' 
 $POBody += $DCR + $DCR + 'Recommend:' +$CRTab +'BTG' + $CRTab + 'No BTG' + $DCR + 'Link:  '
 $POEmail += $POBody
@@ -281,7 +284,7 @@ $ResultsHTML = ConvertTo-Html -Body  "$HTMLfiltered", "$HTMLposts" -Title "RSS F
  
 
 # For testing purposes - so I don't bombard with emails
-$LiveRun = $true
+$LiveRun = $false
 
 ####################################
 ##
