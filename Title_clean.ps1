@@ -7,24 +7,27 @@
 ##  PullDate, Period, FullTitle, CleanedTitle, Source, PubDate
 ################################
 
-Function Clean-Title($anyTitle)
+Function Update-Title($anyTitle)
 {
+    $TitleArray=@()
+    $CommonWords =@('a','an','and','at','for','in','on','of','to','with')
+    [System.Collections.ArrayList]$TitleArray = $anyTitle.split(' ')
+    $TitleArray
+    foreach ($word in $CommonWords){
+            do {
+                $word
+                $TitleArray.Remove($word)
+               } until ($TitleArray -notcontains $word ) 
 
-    $CommonWords =@('a','an','and','for','in','on','of','the','to','with')
-    foreach ($word in $anyTitle){
+    }          
+    write-Host 'The removal'
+     $TitleArray.Remove('The')
+     $TitleArray.Remove('the')
 
-        if($word -match $CommonWords ){
-            $anyTitle -replace (\b$word), ''
-        }
-
-    }
-
-    $anyTitle
-
-
+     $TitleArray
 }
 
-
-$PullDate = (get-date).AddDays(-4).ToString() -Format "MM/dd/yyyy"
-Clean-Title 'The quick brown fox jumped to the window in a tall building'
+$PullDate = (get-date).AddDays(-4).ToString() ##-Format "MM/dd/yyyy"
+Update-Title 'The quick and agile brown and rust fox jumped to the window in a tall building at a stop light north of the andes mountains'
+$PullDate
 #Get-Content I:\new\Titles.txt |     Where-Object { -not $_.Contains('H|159') } |     Set-Content C:\new\newfile.txt
