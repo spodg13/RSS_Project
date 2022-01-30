@@ -36,7 +36,8 @@ Function Get-TitleComparison ($anyTitleArray, $RecentTitles)
     $SimTitles =@()
     $base = $anyTitleArray.Count
         #$RecentTitles = Import-Csv -Path "Titles.txt" -Property PullDate, Period, FullTitle, CleanedTitle,Source, PubDate
-        
+        # Count words - take smallest Clean.  Smallest/Biggest = max value, so accuracy would be 
+        # Does length of word come close?  Jump - Jumping vs cod vs Codified
         foreach ($ct in $RecentTitles.CleanedTitle){
             foreach($word in $anyTitleArray){
                 $word = $word + '*'
