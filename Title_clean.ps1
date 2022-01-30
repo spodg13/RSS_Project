@@ -21,8 +21,8 @@ Function Update-Title($anyTitle)
 
     }          
     write-Host 'The removal'
-     ##$TitleArray.Remove('The')
-     ##$TitleArray.Remove('the')
+     $TitleArray.Remove('The')
+     $TitleArray.Remove('the')
 
      $TitleArray.Sort()
      $TitleArray.Count
@@ -39,7 +39,8 @@ Function Get-TitleComparison ($anyTitleArray, $RecentTitles)
         
         foreach ($ct in $RecentTitles.CleanedTitle){
             foreach($word in $anyTitleArray){
-                if($RecentTitles.CleanedTitle -contains $word){
+                $word = $word + '*'
+                if($RecentTitles.CleanedTitle -like $word ){
                     $i++
                 }
             }
