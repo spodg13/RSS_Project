@@ -21,7 +21,7 @@ Function Get-VectorLength ($anyobject)
     }
     $Vl = [math]::Sqrt($Sum)
     return $Vl
-}  
+}  c
 Function Get-Intersection ($w1, $w2)
 {   
     $comp=@()
@@ -37,6 +37,8 @@ $lw=Get-VectorLength $cw.Values
 $cw | Format-Table
 $sw 
 $lw
-
-$Int = Get-Intersection ('The','quick','brown','fox','jumped','across','andes', 'Mountains', 'tall','building') ('rusty','fox','jumping','andes','mountains','building','north')
+$w1 =('The','quick','brown','Fox','jumped','across','andes', 'Mountains', 'tall','building') 
+$w2=('rusty','fox','jumping','andes','mountains','building','north')
+$Int = Get-Intersection $w1 $w2
 $Int
+Measure-VectorSimilarity.ps1 $w1 $w2 -keyProperty Name -ValueProperty length
