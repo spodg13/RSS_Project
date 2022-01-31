@@ -106,11 +106,11 @@ return [Math]::Round($dot / ($mag1 * $mag2), 3)
 
 }
 
-$w1 =('The','quick','brown','Fox','jumped','across','andes', 'Mountains', 'tall','building') 
+$w1 =('The','quick','brown','Fox','jumped','across','andes', 'Mountains', 'tall','building', 'across') 
 $w2=('rusty','fox','jumped','andes','mountains','building','north')
 
 $name1 = 'John'
-$name2= 'Jon'
+$name2= 'John-Aguilar'
 $name1=$name1.ToCharArray()
 $name2=$name2.ToCharArray()
 
