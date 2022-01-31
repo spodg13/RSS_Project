@@ -1,5 +1,121 @@
 ﻿#####################################
 
+Function Get-SimTitles ([object]$anyPosts)
+{
+
+Function Get-CleanTitle([string]$anyTitle)
+{
+    $anyTitle =$anyTitle -replace ',|\?', '' 
+    $CleanList=@()
+    $CleanList =@('a','an','and','as','at','for','in','into','have', 'has', 'on','of','to','the','with')
+    $anyTitle=$anyTitle.ToLower()
+    [System.Collections.ArrayList]$TitleArray = $anyTitle.split(' ')
+       
+    #Run twice as loop was not working right     
+    $CleanList | %{if($_ -in $TitleArray){$TitleArray.Remove($_)} } 
+    $CleanList | %{if($_ -in $TitleArray){$TitleArray.Remove($_)} } 
+        
+    return $TitleArray | Sort-Object -Unique 
+}
+
+Function Measure-VectorSimilarity
+{ 
+## VectorSimilarity by .AUTHOR Lee Holmes 
+## 
+[CmdletBinding()]
+param(
+    ## The first set of items to compare
+    [Parameter(Position = 0)]
+    $Set1,
+
+    ## The second set of items to compare
+    [Parameter(Position = 1)]   
+    $Set2,
+    
+     
+    [Parameter()]
+    $KeyProperty,
+
+   
+    [Parameter()]
+    $ValueProperty
+)
+
+## If either set is empty, there is no similarity
+if((-not $Set1) -or (-not $Set2))
+{
+    return 0
+}
+
+## Figure out the unique set of items to be compared - either based on
+## the key property (if specified), or the item value directly
+$allkeys = @($Set1) + @($Set2) | Foreach-Object {
+    if($PSBoundParameters.ContainsKey("KeyProperty")) { $_.$KeyProperty}
+    else { $_ }
+} | Sort-Object -Unique
+
+## Figure out the values of items to be compared - either based on
+## the value property (if specified), or the item value directly. Put
+## these into a hashtable so that we can process them efficiently.
+
+$set1Hash = @{}
+$set2Hash = @{}
+$setsToProcess = @($Set1, $Set1Hash), @($Set2, $Set2Hash)
+
+foreach($set in $setsToProcess)
+{
+    $set[0] | Foreach-Object {
+        if($PSBoundParameters.ContainsKey("ValueProperty")) { $value = $_.$ValueProperty }
+        else { $value = 1 }
+        
+        if($PSBoundParameters.ContainsKey("KeyProperty")) { $_ = $_.$KeyProperty }
+
+        $set[1][$_] = $value
+    }
+}
+
+## Calculate the vector / cosine similarity of the two sets
+## based on their keys and values.
+$dot = 0
+$mag1 = 0
+$mag2 = 0
+
+foreach($key in $allkeys)
+{
+    $dot += $set1Hash[$key] * $set2Hash[$key]
+    $mag1 +=  ($set1Hash[$key] * $set1Hash[$key])
+    $mag2 +=  ($set2Hash[$key] * $set2Hash[$key])
+}
+
+$mag1 = [Math]::Sqrt($mag1)
+$mag2 = [Math]::Sqrt($mag2)
+
+## Return the result
+return [Math]::Round($dot / ($mag1 * $mag2), 3)
+
+}
+
+Foreach($title in $anyPosts) {
+    $Sim = 0
+    $test1 = Get-CleanTitle $title.title
+    
+    Foreach($other in $anyPosts) {
+        if($other.source -ne $title.source) {
+            $test2= Get-CleanTitle $other.title
+            $VS= Measure-VectorSimilarity $test1 $test2
+            if($VS -gt .375) {
+                $Sim ++
+            }
+        }
+    }
+    #Should always have one equal- the article itself
+    $title.SimTitles = $Sim-1
+}
+
+return $anyPosts
+
+}
+
 Function Get-Posts ($anyXMLfeed, $anyname)
 { $fields = 'title','description','pubDate','link'
 
@@ -179,7 +295,13 @@ Write-host 'Filtering terms'
 foreach($term in $dirtylaundry){
     
     $filteredposts += $posts | where-object {($_.description -Match $term -or $_.Title -match $term)} | Select-Object $_
-    $filteredposts | Sort-object -Unique -Property Title, Source | Select-Object -Property title, description,link,source,SimTitles,PubDate,PullDate | Export-CSV -Path "\\dcms2ms\Privacy Audit and Logging\TestScript\DirtyLaundry.csv" 
+    $OldPosts = Import-CSV -Path "\\dcms2ms\Privacy Audit and Logging\TestScript\DirtyLaundry.csv" `
+    | Where-Object {$_.PullDate -gt (Get-Date).AddDays(-3)}
+    $filteredposts | Sort-object -Unique -Property Title, Source | Select-Object -Property title, description,link,source,SimTitles,PubDate,PullDate 
+    $NewPosts = $OldPosts + $filteredposts | Sort-object -Unique -Property Title, Source | Select-Object -Property title, description,link,source,SimTitles,PubDate,PullDate 
+    $TrendingTopics = Get-SimTitles $NewPosts
+    $TrendingTopics | Export-CSV -Path "\\dcms2ms\Privacy Audit and Logging\TestScript\DirtyLaundry.csv"
+    $TrendingTopics = $TrendingTopics | Where-Objec{$_.SimTitles -gt 2} |Sort-Object -Property SimTitles -Descending
 }
 
 Write-host 'Filtering Cities'
@@ -202,7 +324,7 @@ foreach($term in $medical) {
 ####################################
 
 
-$filtered = $filteredlocations | Sort-Object -Unique -Property Title, Source
+$filtered = $finalcut | Sort-Object -Unique -Property Title, Source
 $filtered.title
 $Articles = $filtered.Count
 $Subj = 'Stories reviewed: ' + $posts.Count +' posts filtered to ' + $Articles + ' articles'
@@ -271,6 +393,12 @@ $TweetCount = $Tweeters.Count
 $HTMLposts = $posts | ConvertTo-Html -as Table -Property Title, description, link, pubDate, source -Fragment `
     -PreContent "<h3>RSS Feeds pulled: $strF <br> Twitter Accounts: $strT <br> $Subj </h3>"
 
+$HTMLT = $TrendingTopics | ConvertTo-Html -As Table -Property Title, description, link, pubDate, source -Fragment `
+    -PreContent "<h3>Stories with three or more similar titles</h3>"
+
+$HTMLTF = $HTMLT -replace '<tr><td>(?<title>[^\<]+)<\/td><td>(?<desc>[^\<]+)<\/td><td>(?<weblink>[^\<]+)\<\/td><td>(?<pubDate>[^\<]+)', `
+    ('<tr><td>${title}</td><td>${desc}</td><td><a href="${weblink}">Full_Story_Click_Here</a><br><a href='+$POEmail+'${weblink}%0D%0A%0D%0ATitle: ${title}%0D%0ADescription: ${desc}%0D%0APublished on: ${pubDate}%0D%0A'`
+    + $POData + '>Send to PO</a></td><td>${pubDate}</td>')
 
 $filtered = $filtered | ConvertTo-Html -as Table -Property Title, description, link, pubDate, source -Fragment `
     -PreContent "<h3>Feeds scraped - $feedCount  Twitter Accounts scraped:  $TweetCount <br> Filtered Feed Terms: $qry </h3>"|Out-String
@@ -292,7 +420,7 @@ $ResultsF = ConvertTo-Html -Body "$FullHTML","$HTMLposts" -Title "RSS Feed Repor
 ##########>
 
 
-$ResultsHTML = ConvertTo-Html -Body  "$HTMLfiltered", "$HTMLposts" -Title "RSS Feed Report" -Head $Header `
+$ResultsHTML = ConvertTo-Html -Body  "$HTMLfiltered", "$HTMLTF" -Title "RSS Feed Report" -Head $Header `
     -PostContent "<br><h3> RSS Feeds pulled: $strF <br> Twitter Accounts: $strT <br> <br> Created on $strDate  by $env:UserName<br>`
     <a href='\\dcms2ms\Privacy Audit and Logging\TestScript\rss_feed.html'>Feed</a><br></h3>" `
     |Out-String   ##Out-File "a:\TestScript\RSS_Feed.html"

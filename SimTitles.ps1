@@ -9,16 +9,14 @@
     #Run twice as loop was not working right     
     $CleanList | %{if($_ -in $TitleArray){$TitleArray.Remove($_)} } 
     $CleanList | %{if($_ -in $TitleArray){$TitleArray.Remove($_)} } 
-   
-
-   # $TitleArray.Sort()
-   # $TitleArray.Count
-     
+        
     return $TitleArray | Sort-Object -Unique 
 }
 
 Function Measure-VectorSimilarity
 { 
+## VectorSimilarity by .AUTHOR Lee Holmes 
+## 
 [CmdletBinding()]
 param(
     ## The first set of items to compare
@@ -29,15 +27,11 @@ param(
     [Parameter(Position = 1)]   
     $Set2,
     
-    ## If the item sets represent objects that have a main property
-    ## (like file names), the name of that key property 
+     
     [Parameter()]
     $KeyProperty,
 
-    ## If the item sets represent objects that have a main property
-    ## to represent the values (like Count or Percent),
-    ## the name of that key property. If they don't have a property
-    ## like this, simple existence of the item will be used. 
+   
     [Parameter()]
     $ValueProperty
 )
@@ -96,7 +90,8 @@ return [Math]::Round($dot / ($mag1 * $mag2), 3)
 
 }
 
-$Titles = Import-CSV -Path "\\dcms2ms\Privacy Audit and Logging\TestScript\DirtyLaundry.csv" 
+$OldTitles = Import-CSV -Path "\\dcms2ms\Privacy Audit and Logging\TestScript\DirtyLaundry.csv" `
+| Where-Object {$_.PullDate -gt (Get-Date).AddDays(-3)}
 ##Filter by pull date
 
 
@@ -105,11 +100,12 @@ Foreach($title in $Titles) {
     $test1 = Get-CleanTitle $title.title
     
     Foreach($other in $Titles) {
-        
-        $test2= Get-CleanTitle $other.title
-        $VS= Measure-VectorSimilarity $test1 $test2
-        if($VS -gt .375) {
-        $Sim ++
+        if($other.source -ne $title.source) {
+            $test2= Get-CleanTitle $other.title
+            $VS= Measure-VectorSimilarity $test1 $test2
+            if($VS -gt .375) {
+                $Sim ++
+            }
         }
     }
     #Should always have one equal- the article itself
@@ -117,3 +113,4 @@ Foreach($title in $Titles) {
 }
 
 $Titles | Select-Object -Property Title, SimTitles | Format-Table
+$UseT = Import-Csv -Path "A:\TestScript\DirtyLaundry.csv" | Where-Object {[datetime]$_.pubDate -gt (Get-Date).AddDays(-3) -and $_.PullDate -gt (Get-Date).AddDays(-3)}
