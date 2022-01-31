@@ -19,6 +19,7 @@ Function Get-CleanTitle([string]$anyTitle)
     $CleanList | %{if($_ -in $TitleArray){$TitleArray.Remove($_)} } 
     $CleanList | %{if($_ -in $TitleArray){$TitleArray.Remove($_)} } 
    
+
     $TitleArray.Sort()
     $TitleArray.Count
      

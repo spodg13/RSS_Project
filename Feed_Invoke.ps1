@@ -30,6 +30,8 @@ Function Get-Posts ($anyXMLfeed, $anyname)
 }
     $Source = 'RSS: ' + $anyname 
     $posts | Add-Member -NotePropertyName 'source' -NotePropertyValue $Source
+    $posts | Add-Member -NotePropertyName 'SimTitles' -NotePropertyValue 0
+    $posts | Add-Member -NotePropertyName 'PullDate' -NotePropertyValue (Get-Date).ToString("MM/dd/yyyy")
     return $posts
 }
 
@@ -52,7 +54,9 @@ Function Get-Tweets ($anyTwitterHandle, $anyname)
 
     $Tweets | ForEach-Object {$_.title = $_.user.name}
     # name of property and expression
-    $posts = $Tweets | Select-Object -property @{Name='description'; Expression={$_.full_text}},@{Name='pubDate';Expression={$_.created_at}},@{Name='title'; Expression={$_.title}},@{Name='link'; Expression={$_.link}},@{Name='source'; Expression={$_.source}} 
+    $posts = $Tweets | Select-Object -property @{Name='description'; Expression={$_.full_text}},@{Name='pubDate';Expression={$_.created_at}},`
+    @{Name='title'; Expression={$_.full_text}},@{Name='link'; Expression={$_.link}},@{Name='source'; Expression={$_.source}},`
+    @{Name='PullDate';Expression={(Get-Date).ToString("MM/dd/yyyy")}},@{Name='SimTitles';Expression={0}} 
                              
     return $posts
 }
@@ -108,7 +112,8 @@ $filteredposts = @()
 ##
 ####################################
 
-$qry = @('accident','armed','arrested','collision','crash','died','dies','fatal','hit-and-run','killing','shooting','shot','suspects','Sutter','victim')
+$dirtylaundry = @('accident','armed','arrest','collision','crash','fatal','hit-and-run','killing','shooting','shot','suspects','Sutter','victim')
+$medical =@('injuries','injured','hospitalized','hospital','died','dies')
 #$cities = @('Antioch','Auburn','Brentwood','Citrus Heights','Elk Grove','Fairfield','Lodi','Oakdale','Oakland','Richmond','Rocklin','Roseville','Sacramento','San Francisco','San Jose','Stockton','Tracy','Vacaville','Vallejo','Yuba City')
 $cities = Import-Csv -Path "\\dcms2ms\Privacy Audit and Logging\TestScript\Cities.csv" | Select-Object -Property Name
 $feeds = Import-CSV -Path "\\dcms2ms\Privacy Audit and Logging\TestScript\Feeds.csv" | Where-Object {$_.Type -eq 'RSS'}| Select-Object -Property Link, Name
@@ -143,8 +148,8 @@ foreach($Tweeter in $Tweeters){
 }
 
 
-## replace any HTML paragraphs
-## \<.?p\>
+## replace any HTML in the XML
+## \<.+?>
 
 $posts | ForEach-Object {
     if ($_.description -match '<p>') {
@@ -171,9 +176,10 @@ $posts.Count
 ####################################
 
 Write-host 'Filtering terms'
-foreach($term in $qry){
+foreach($term in $dirtylaundry){
     
-    $filteredposts += $posts | where-object {($_.description -Match ('\b'+$term) -or $_.Title -match ('\b'+$term))} | Select-Object $_
+    $filteredposts += $posts | where-object {($_.description -Match $term -or $_.Title -match $term)} | Select-Object $_
+    $filteredposts | Sort-object -Unique -Property Title, Source | Select-Object -Property title, description,link,source,SimTitles,PubDate,PullDate | Export-CSV -Path "\\dcms2ms\Privacy Audit and Logging\TestScript\DirtyLaundry.csv" 
 }
 
 Write-host 'Filtering Cities'
@@ -182,6 +188,13 @@ foreach($city in $cities){
     $filteredlocations += $filteredposts | where-object {($_.description -Match $city.name -or $_.Title -match $city.name)} | Select-Object $_
 }
 
+Write-host 'Filtering Med terms'
+foreach($term in $medical) {
+
+    $finalcut +=$filteredlocations | where-object {($_.description -Match ('\b'+$term) -or $_.Title -match ('\b'+$term))} | Select-Object $_
+}
+
+
 ####################################
 ##
 ##  Capture only unique Titles
@@ -189,7 +202,8 @@ foreach($city in $cities){
 ####################################
 
 
-$filtered = $filteredlocations | Sort-Object -Unique -Property Title
+$filtered = $filteredlocations | Sort-Object -Unique -Property Title, Source
+$filtered.title
 $Articles = $filtered.Count
 $Subj = 'Stories reviewed: ' + $posts.Count +' posts filtered to ' + $Articles + ' articles'
          
@@ -279,13 +293,14 @@ $ResultsF = ConvertTo-Html -Body "$FullHTML","$HTMLposts" -Title "RSS Feed Repor
 
 
 $ResultsHTML = ConvertTo-Html -Body  "$HTMLfiltered", "$HTMLposts" -Title "RSS Feed Report" -Head $Header `
-    -PostContent "<br><h3> RSS Feeds pulled: $strF <br> Twitter Accounts: $strT <br> <br> Created on $strDate  by $env:UserName<br></h3>" `
+    -PostContent "<br><h3> RSS Feeds pulled: $strF <br> Twitter Accounts: $strT <br> <br> Created on $strDate  by $env:UserName<br>`
+    <a href='\\dcms2ms\Privacy Audit and Logging\TestScript\rss_feed.html'>Feed</a><br></h3>" `
     |Out-String   ##Out-File "a:\TestScript\RSS_Feed.html"
 
  
 
 # For testing purposes - so I don't bombard with emails
-$LiveRun = $true
+$LiveRun = $false
 
 ####################################
 ##
@@ -301,10 +316,10 @@ Import-Csv -Path "I:\RSS_Project\Variable.csv" | foreach {
 if($LiveRun) {
     $props = @{
         From = $CCGroup
-        To= $ToGroup
+        To= $CCGroup
         CC= $CCGroup
         Subject = 'RSS Feeds'
-        Body = $ResultsHTML
+        Body = $ResultsHTML 
         SmtpServer = $mailserver
     }
     Send-MailMessage @props -BodyAsHtml

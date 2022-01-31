@@ -90,10 +90,7 @@ $OAuthSettings = @{
 ##
 #######################################
 $Tweeters = @()
-$Tweeters = ('krcr7','AuburnJournal')
 $feeds = @()
-$feeds = ("https://www.kcra.com/topstories-rss","https://sacramento.cbslocal.com/feed/","https://sanfrancisco.cbslocal.com/feed/","https://abc7news.com/feed/","https://www.ksbw.com/topstories-rss")#, "https://www.sacbee.com/?widgetName=rssfeed&widgetContentId=6199&getXmlFeed=true")
-#"https://rss.app/feeds/P9pRXxyOc0VmepAS.xml",
 
 $i = 0
 $doc = New-Object System.Xml.XmlDocument
@@ -111,6 +108,11 @@ $filteredposts = @()
 $qry = @('accident','armed','arrested','collision','crash','died','dies','fatal','hit-and-run','killing','shooting','shot','suspects','Sutter','victim')
 #$cities = @('Antioch','Auburn','Brentwood','Citrus Heights','Elk Grove','Fairfield','Lodi','Oakdale','Oakland','Richmond','Rocklin','Roseville','Sacramento','San Francisco','San Jose','Stockton','Tracy','Vacaville','Vallejo','Yuba City')
 $cities = Import-Csv -Path "\\dcms2ms\Privacy Audit and Logging\TestScript\Cities.csv" | Select-Object -Property Name
+$feeds = Import-CSV -Path "\\dcms2ms\Privacy Audit and Logging\TestScript\Feeds.csv" | Where-Object {$_.Type -eq 'RSS'}| Select-Object -Property Link, Name, SaveFile
+$Tweeters = Import-CSV -Path "\\dcms2ms\Privacy Audit and Logging\TestScript\Feeds.csv" | Where-Object {$_.Type -eq 'Tweet'} |Select-Object -Property Link, Name, SaveFile
+
+$feeds | Format-Table
+$Tweeters | Format-Table
 
 ####################################
 ##
@@ -121,11 +123,13 @@ $cities = Import-Csv -Path "\\dcms2ms\Privacy Audit and Logging\TestScript\Citie
 ####################################
 
 foreach($feed in $feeds) {
-$i++
-
-$doc.Load("$feed")
-$doc.save("I:\RSS_Project\Feeds\feed-" + $i +".xml")
-$feed
+if(($feed.SaveFile -eq 'Yes') -and ($feed.Type -eq 'RSS')){
+    $feed.Name
+    $Link = $feed.Link
+    $Link
+    $doc.Load("$Link")
+    $doc.save("I:\RSS_Project\Feeds\" + $feed.Name +".xml")
+    }
 }
 
 $files = Get-ChildItem "I:\RSS_Project\Feeds\"

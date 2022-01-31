@@ -1,34 +1,4 @@
-<#PSScriptInfo 
- 
-.DESCRIPTION Measures the vector / cosine similarity between two sets of items. 
-.VERSION 1.0.0 
-.GUID e1f78756-d1bc-47b4-8d88-475ace119a69 
-.AUTHOR Lee Holmes 
- 
-#>
-
-<# 
- 
-.SYNOPSIS 
- 
-Measures the vector / cosine similarity between two sets of items. 
-See: https://en.wikipedia.org/wiki/Cosine_similarity 
- 
-.EXAMPLE 
- 
-PS > .\Measure-VectorSimilarity.ps1 @(1..10) @(3..8) 
-0.775 
- 
-.EXAMPLE 
- 
-PS > $items = dir c:\windows\ | Select -First 10 
-PS > $items2 = dir c:\windows\ | Select -First 8 
-PS > .\Measure-VectorSimilarity.ps1 $items $items2 -KeyProperty Name -ValueProperty Length 
-0.894 
- 
-#>
-
-Function Get-CleanTitle([string]$anyTitle)
+﻿Function Get-CleanTitle([string]$anyTitle)
 {
     $anyTitle =$anyTitle -replace ',|\?', '' 
     $CleanList=@()
@@ -126,19 +96,24 @@ return [Math]::Round($dot / ($mag1 * $mag2), 3)
 
 }
 
-#$w1 =('The','quick','brown','Fox','jumped','across','andes', 'Mountains', 'tall','building', 'across') 
-#$w2=('rusty','fox','jumped','andes','mountains','building','north')
-
-$name1 = 'Stockton fire captain, a Modesto resident, fatally shot while battling fire'
-$name2 = 'Firefighter dies after being shot while fighting Stockton fire'
+$Titles = Import-CSV -Path "\\dcms2ms\Privacy Audit and Logging\TestScript\DirtyLaundry.csv" 
+##Filter by pull date
 
 
-$tname1=Get-CleanTitle $name1
-$tname2=Get-CleanTitle $name2
-$tname1
+Foreach($title in $Titles) {
+    $Sim = 0
+    $test1 = Get-CleanTitle $title.title
+    
+    Foreach($other in $Titles) {
+        
+        $test2= Get-CleanTitle $other.title
+        $VS= Measure-VectorSimilarity $test1 $test2
+        if($VS -gt .375) {
+        $Sim ++
+        }
+    }
+    #Should always have one equal- the article itself
+    $title.SimTitles = $Sim-1
+}
 
-#write-host 'Sentence'
-#Measure-VectorSimilarity -Set1 $w1 -Set2 $w2 
-
-write-host 'Name'
-Measure-VectorSimilarity -Set1 $tname1 -Set2 $tname2
+$Titles | Select-Object -Property Title, SimTitles | Format-Table
