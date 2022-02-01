@@ -27,6 +27,8 @@ $WebResponse.content
     $posts | Add-Member -MemberType NoteProperty -Name 'qryMatch' -Value $false
     update posts.qryMatch = $true
 
+    https://stackoverflow.com/questions/241789/parse-datetime-with-time-zone-of-form-pst-cest-utc-etc
+
 #####################################>
 
 
