@@ -224,6 +224,7 @@ $posts=@()
 $filtered = @()
 $filteredlocations = @()
 $filteredposts = @()
+$finalcut =@()
 $badfeeds=@()
 
 ####################################
@@ -381,6 +382,7 @@ TABLE tr:nth-child(odd) td:nth-child(even){ background: #E5E5E5; }
 [string]$strT = $Tweeters.Name -join ", "
 [string]$strF = $feeds.Name -join ", " 
 [string]$strDL = $dirtylaundryterms -join ", "
+[string]$strMed = $medical -join ", " 
 [string]$CRTab = '%0D%0A     '
 [string]$CR = '%0D%0A'
 [string]$DCR ='%0D%0A%0D%0A'
@@ -400,6 +402,7 @@ $POData += 'Options:' + $DCR + 'Temporary-Protenus watch list for 30 days. BTG-P
 $POData += $DCR + 'Permanent-Protenus watch list permanently and BTG is applied."'  
 $FeedCount = $feeds.Count
 $TweetCount = $Tweeters.Count
+$dlCount = $dirtylaundry.Count
 if($badfeeds.Count -eq 0) {$badfeeds += 'None'}
 
 
@@ -411,13 +414,13 @@ $posts | ConvertTo-Html -as Table -Property Title, description, link, pubDate, s
     -PreContent "<h4>Full Posts</h4><h3>RSS Feeds pulled: $strF <br> Twitter Accounts: $strT <br> $Subj <br> $strDate</h3>" | Out-File "a:\RSS_Feeds\Original_Posts.html"
 
 $dirtylaundry | ConvertTo-Html -as Table  -Property Title, description, link, pubDate, source -Head $Header `
-    -PreContent "<h4>DirtyLaundry Posts</h4><h3>Terms: $dirtylaundryterms <br> $strDate</h3>" | Out-File "a:\RSS_Feeds\Dirty_Laundry.html"
+    -PreContent "<h4>DirtyLaundry: $dlCount posts</h4><h3>Terms: $strDL <br> $strDate</h3>" | Out-File "a:\RSS_Feeds\Dirty_Laundry.html"
 
 $filteredlocations | ConvertTo-Html -as Table -Property Title, description, link, pubDate, source -Head $Header `
     -PreContent "<h4>Only in SandraCities</h4><h3>$strDate </h3>" | Out-File "a:\RSS_Feeds\LocationFiltered.html"
 
 $filtered | ConvertTo-Html -as Table -Property Title, description, link, pubDate, source -Head $Header `
-    -PreContent "<h4>Medical Terms</h4><h3>Terms: $Medical <br>$strDate </h3>" | Out-File "a:\RSS_Feeds\FinalCut.html"
+    -PreContent "<h4>Medical Terms: $Articles posts</h4><h3>Terms: $strMed <br>$strDate </h3>" | Out-File "a:\RSS_Feeds\FinalCut.html"
 
 $HTMLT = $TrendingTopics | ConvertTo-Html -As Table -Property Title, description, link, pubDate,  source, SimTitles -Fragment `
     -PreContent "<h4>Trending News:  Stories with three or more similar titles</h4>"
