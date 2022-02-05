@@ -1,13 +1,41 @@
 ﻿#####################################
+##  Future state
+##  . 'I:\RSS_Project\Get-SimTitles.ps1'
 
-Function Get-SimTitles ([object[]]$anyPosts)
+Function Get-SimTitles ([psobject[]]$anyPosts)
 {
-write-host 'Titles -' $anyPosts.title
+## Future state
+##. 'I:\RSS_Project\Measure-TitleSimilarity.ps1'
+
+Function Measure-TitleSimilarity
+{
+## Based on VectorSimilarity by .AUTHOR Lee Holmes 
+## Modified slightly to match use
+##
+
+
+[CmdletBinding()]
+param(
+    ## The first set of items to compare
+    [Parameter(Position = 0)]
+    $Title1,
+
+    ## The second set of items to compare
+    [Parameter(Position = 1)]   
+    $Title2,
+    
+     
+    [Parameter()]
+    $KeyProperty,
+
+   
+    [Parameter()]
+    $ValueProperty
+) 
 
 Function Get-CleanTitle([string]$anyTitle)
 {
     $anyTitle =$anyTitle -replace ',|\?', '' 
-    $CleanList=@()
     $CleanList =@('a','an','and','as','at','for','in','into','have', 'has', 'on','of','to','the','with')
     $anyTitle=$anyTitle.ToLower()
     [System.Collections.ArrayList]$TitleArray = $anyTitle.split(' ')
@@ -19,34 +47,17 @@ Function Get-CleanTitle([string]$anyTitle)
     return $TitleArray | Sort-Object -Unique 
 }
 
-Function Measure-VectorSimilarity
-{ 
-## VectorSimilarity by .AUTHOR Lee Holmes 
-## 
-[CmdletBinding()]
-param(
-    ## The first set of items to compare
-    [Parameter(Position = 0)]
-    $Set1,
-
-    ## The second set of items to compare
-    [Parameter(Position = 1)]   
-    $Set2,
-    
-     
-    [Parameter()]
-    $KeyProperty,
-
-   
-    [Parameter()]
-    $ValueProperty
-)
 
 ## If either set is empty, there is no similarity
-if((-not $Set1) -or (-not $Set2))
+if((-not $Title1) -or (-not $Title2))
 {
     return 0
 }
+
+$Set1=@()
+$Set2=@()
+$Set1 = Get-CleanTitle $Title1
+$Set2 = Get-CleanTitle $Title2
 
 ## Figure out the unique set of items to be compared - either based on
 ## the key property (if specified), or the item value directly
@@ -97,31 +108,23 @@ return [Math]::Round($dot / ($mag1 * $mag2), 3)
 }
 
 $i=0
-write-host 'Checking similarities for ' $anyPosts.Count ' titles'
 
-Foreach($title in $anyPosts) {
-    $Sim = 0
+$anyPosts
+
+Foreach($post in $anyPosts) {
+    
     $i++
-    if($i%20 -eq 0) {write-host $i ' of ' $anyPosts.Count}
-    $test1 = Get-CleanTitle $title.title
-    $k=0
-    Foreach($other in $anyPosts) {
-        
-        if($other.source -ne $title.source) {
-            $test2= Get-CleanTitle $other.title
-            $VS= Measure-VectorSimilarity $test1 $test2
-            if($VS -gt .375) {
-                $Sim ++
-            }
-        }
+    if($i%50 -eq 0) {write-host $i ' of ' $anyPosts.Count}
+    
+    $anyPosts |  & {process {  if( (Measure-TitleSimilarity $post.title $_.title) -gt .1){ $_.SimTitles +=1}}}
+     #Where-Object {$_.source -ne $post.source} |   
     }
     
-    $title.SimTitles = $Sim
-}
-
 return $anyPosts
 
 }
+
+
 
 Function Get-Posts ($anyXMLfeed, $anyname)
 { $fields = 'title','description','pubDate','link'
@@ -276,8 +279,8 @@ foreach($Tweeter in $Tweeters){
 $InitPosts = $posts
 ## replace any HTML in the XML
 ## \<.+?>
- $InitPosts | Where-Object {($_.description -match '<p>' -or $_.description -match '<a')} | ForEach-Object {$_.description -replace '(<.+?>)',''}| Select-Object
- $InitPosts | Where-Object { $_.description -match '\?\?\?'} | ForEach-Object {$_.description -replace '\?\?\?',"'"} | Select-Object
+## $InitPosts | Where-Object {($_.description -match '<p>' -or $_.description -match '<a')} | ForEach-Object {$_.description -replace '(<.+?>)',''}| Select-Object
+## $InitPosts | Where-Object { $_.description -match '\?\?\?'} | ForEach-Object {$_.description -replace '\?\?\?',"'"} | Select-Object
  
 $posts | ForEach-Object {
     if ($_.description -match '<p>' ) {
@@ -287,15 +290,22 @@ $posts | ForEach-Object {
 }
 $ic=[Globalization.CultureInfo]::InvariantCulture
 
+$posts | & {process {if($_.description -match '<p>'){$_.description = $_.description -replace '(<.+?>)',''}}}
+$posts | & {process {if($_.source -match 'Bee'){$_.pubDate =$_.pubDate.replace('PST','-8')}}}
+$posts | & {process {if($_.title -match '\?{3}'){$_.title = $_.title -replace '\?{3}',"'"}}}
+$posts | & {process {if($_.description -match '\?{3}'){$_.description = $_.description -replace '\?{3}',"'"}}}
+
+
+
 $posts | ForEach-Object {
     try { $_.pubDate= Get-Date $_.pubDate -Format ("MM-dd-yy hh:mm tt") }
-    catch {  try{ $_.pubDate = [datetime]::ParseExact($_.pubDate.replace('PST','-8'), 'MM-dd-yy hh:mm tt', $ic)  }
+    catch {  try{ $_.pubDate = Get-Date ($_.pubDate.replace('PST','-8')) -Format ('MM-dd-yy hh:mm tt')  }
              catch { write-host 'Unable to parse date' $_.Source }
            }
   ##'ddd dd MMM yyyy HH:mm:ss z'
    }            
     
-$posts | Format-Table
+#$posts | Format-Table
 $posts.Count
 
 ####################################
@@ -312,11 +322,18 @@ foreach($term in $dirtylaundryterms){
     
     }
     $OldPosts = Import-CSV -Path "\\dcms2ms\Privacy Audit and Logging\TestScript\DirtyLaundry.csv" `
-    | Where-Object {$_.PullDate -gt (Get-Date).AddDays(-2) }
+    | Where-Object {$_.PullDate -gt (Get-Date).AddDays(-2)  }
     $dirtylaundry = $filteredposts | Sort-object -Unique -Property Title | Select-Object -Property title, description, link, source, SimTitles, PubDate, PullDate 
-    $NewPosts = ($OldPosts + $filteredposts | Sort-object -Unique -Property Title)|Sort-Object -Unique -Property Title, PullDate, pubDate | Select-Object -Property title, description,link,source,SimTitles,PubDate,PullDate 
-    write-host $NewPosts '  - New posts, filtered for dirty laundry'
-    $TrendingTopics = Get-SimTitles $NewPosts
+    ## Reset sim titles to zero??????
+    $NewPosts = ($OldPosts + $filteredposts | Sort-object -Unique -Property Title)|Sort-Object -Unique -Property Title, PullDate, pubDate |Select-Object -Property title, description,link,source,SimTitles,PubDate,PullDate 
+    
+    ###$NewPosts | & {process {$_.simTitles = 0}}
+
+    write-host $NewPosts.Count '  - New posts, filtered for dirty laundry'
+    
+    ##Process for trending and save to dirty laundry
+    $TrendingTopics = $NewPosts | & {process {Get-SimTitles $_}}
+    ## $TrendingTopics = Get-SimTitles $NewPosts
     $TrendingTopics | Export-CSV -Path "\\dcms2ms\Privacy Audit and Logging\TestScript\DirtyLaundry.csv"
     $TrendingTopics = $TrendingTopics | Where-Object{$_.SimTitles -gt 2} |Sort-Object -Property SimTitles -Descending
 
