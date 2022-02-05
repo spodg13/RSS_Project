@@ -27,6 +27,8 @@ param(
 . 'I:\RSS_Project\Get-CleanTitle.ps1'
 
 
+#$stopwatch = [System.Diagnostics.Stopwatch]::StartNew()
+
 ## If either set is empty, there is no similarity
 if((-not $Title1) -or (-not $Title2))
 {
@@ -35,8 +37,9 @@ if((-not $Title1) -or (-not $Title2))
 
 $Set1=@()
 $Set2=@()
-$Set1 = Get-CleanTitle $Title1
-$Set2 = Get-CleanTitle $Title2
+$Set1 =  $Title1
+$Set2 =  $Title2
+
 
 ## Figure out the unique set of items to be compared - either based on
 ## the key property (if specified), or the item value directly
@@ -80,8 +83,15 @@ foreach($key in $allkeys)
 
 $mag1 = [Math]::Sqrt($mag1)
 $mag2 = [Math]::Sqrt($mag2)
-
+#$stopwatch.Elapsed.TotalSeconds
+#$stopwatch
 ## Return the result
 return [Math]::Round($dot / ($mag1 * $mag2), 3)
 
 }
+
+$b='UPDATE: Arrest Made In SoFi Stadium Assault Of 49ers Fan Daniel Luna'
+$c='Daniel Luna SoFi Assault suspect arrested'
+
+
+Measure-TitleSimilarity $b.toCharArray() $c.ToCharArray()
