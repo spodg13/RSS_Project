@@ -22,16 +22,16 @@ Function Get-WordCount($anyposts)
 
 Function Get-SimTitles([psobject]$NewPosts) {
 
-  $CKTitles = $NewPosts.title
+  $CKTitles = $NewPosts
 
-  foreach ($Ck in $CkTitles) {
-    $NewPosts | & { 
+  foreach ($Ck in $CkTitles.title) {
+    $NewPosts | Where-Object {$_.source -ne $CKTitles.source} | & { 
       process { 
-        if ((Measure-TitleSimilarity $Ck.split(' ') $_.title.split(' ') -gt .2)) 
+        if (($score=Measure-TitleSimilarity $Ck.split(' ') $_.title.split(' ')) -gt .5) 
         {
           $_.SimTitles = $_.SimTitles + 1 
-        } 
-      } 
+        } else { $results+= $score + '|'+ $ck + '|' + $score + '|' + $_.title} 
+       Set-Content -path 'I:\RSS_Project\results.txt' -value $results} 
     } 
   }
 }
@@ -302,9 +302,7 @@ foreach($term in $dirtylaundryterms){
     $i++
     }
 
-
-    $TrendingTopics = $NewPosts
-    ## $TrendingTopics = Get-SimTitles $NewPosts
+    $TrendingTopics = Get-SimTitles $NewPosts
     $TrendingTopics | Export-CSV -Path "\\dcms2ms\Privacy Audit and Logging\TestScript\DirtyLaundry.csv"
     $TrendingTopics = $TrendingTopics | Where-Object{$_.SimTitles -gt 2} |Sort-Object -Property SimTitles -Descending
 
