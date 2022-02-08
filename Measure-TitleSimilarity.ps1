@@ -27,7 +27,7 @@ param(
 . 'I:\RSS_Project\Get-CleanTitle.ps1'
 
 
-#$stopwatch = [System.Diagnostics.Stopwatch]::StartNew()
+
 
 ## If either set is empty, there is no similarity
 if((-not $Title1) -or (-not $Title2))
@@ -83,7 +83,7 @@ foreach($key in $allkeys)
 
 $mag1 = [Math]::Sqrt($mag1)
 $mag2 = [Math]::Sqrt($mag2)
-#$stopwatch.Elapsed.TotalSeconds
+
 #$stopwatch
 ## Return the result
 return [Math]::Round($dot / ($mag1 * $mag2), 3)
@@ -94,4 +94,4 @@ $b='UPDATE: Arrest Made In SoFi Stadium Assault Of 49ers Fan Daniel Luna'
 $c='Daniel Luna SoFi Assault suspect arrested'
 
 
-Measure-TitleSimilarity $b.toCharArray() $c.ToCharArray()
+Measure-TitleSimilarity $b.split(' ') $c.split(' ')

@@ -1,93 +1,73 @@
 ﻿#####################################
 ##  Future state
-##  . 'I:\RSS_Project\Get-SimTitles.ps1'
+##  . 'I:\RSS_Project\Get-InitialTitles.ps1'
 
-Function Get-SimTitles ([psobject[]]$anyPosts)
+Function Get-WordCount($anyposts)
 {
-## Future state
-##. 'I:\RSS_Project\Measure-TitleSimilarity.ps1'
+
+    $titlestring = $anyposts.title -join ' '
+    $titlestring = $titlestring.split(' ')
+
+    $CleanList =@('a','after','an','and','as','at','for','from','I','in','into','is','have', 'has','her','him','man', 'on','of','s','t','to','the','with','woman','')
+    $dirtylaundryterms = @('accident','armed','arrest', 'arrested','collision','crash','DUI','fatal','hit-and-run','homicide','police','sheriff','shooting','shot','suspects','Sutter','victim')
+    
+    $frequency = $titlestring -split '\W+' |
+    Group-Object -NoElement |
+    Sort-Object count -Descending | 
+    Where-Object {$_.name -notin $CleanList -and $_.name -notin $dirtylaundryterms} |
+    Where-Object{$_.count -gt 2} | Select-Object 
+
+    return $frequency
+}
+
+Function Get-SimTitles([psobject]$NewPosts) {
+
+  $CKTitles = $NewPosts.title
+
+  foreach ($Ck in $CkTitles) {
+    $NewPosts | & { 
+      process { 
+        if ((Measure-TitleSimilarity $Ck.split(' ') $_.title.split(' ') -gt .2)) 
+        {
+          $_.SimTitles = $_.SimTitles + 1 
+        } 
+      } 
+    } 
+  }
+}
+
 
 Function Measure-TitleSimilarity
 {
 ## Based on VectorSimilarity by .AUTHOR Lee Holmes 
 ## Modified slightly to match use
-##
-
 
 [CmdletBinding()]
 param(
-    ## The first set of items to compare
+    
     [Parameter(Position = 0)]
     $Title1,
 
-    ## The second set of items to compare
     [Parameter(Position = 1)]   
-    $Title2,
+    $Title2
     
-     
-    [Parameter()]
-    $KeyProperty,
-
-   
-    [Parameter()]
-    $ValueProperty
+        
 ) 
 
-Function Get-CleanTitle([string]$anyTitle)
-{
-    $anyTitle =$anyTitle -replace ',|\?', '' 
-    $CleanList =@('a','an','and','as','at','for','in','into','have', 'has', 'on','of','to','the','with')
-    $anyTitle=$anyTitle.ToLower()
-    [System.Collections.ArrayList]$TitleArray = $anyTitle.split(' ')
-       
-    #Run twice as loop was not working right     
-    $CleanList | %{if($_ -in $TitleArray){$TitleArray.Remove($_)} } 
-    $CleanList | %{if($_ -in $TitleArray){$TitleArray.Remove($_)} } 
-        
-    return $TitleArray | Sort-Object -Unique 
-}
-
-
-## If either set is empty, there is no similarity
-if((-not $Title1) -or (-not $Title2))
-{
-    return 0
-}
-
-$Set1=@()
-$Set2=@()
-$Set1 = Get-CleanTitle $Title1
-$Set2 = Get-CleanTitle $Title2
-
-## Figure out the unique set of items to be compared - either based on
-## the key property (if specified), or the item value directly
-$allkeys = @($Set1) + @($Set2) | Foreach-Object {
-    if($PSBoundParameters.ContainsKey("KeyProperty")) { $_.$KeyProperty}
-    else { $_ }
-} | Sort-Object -Unique
-
-## Figure out the values of items to be compared - either based on
-## the value property (if specified), or the item value directly. Put
-## these into a hashtable so that we can process them efficiently.
+$allkeys = @($Title1) + @($Title2) |  Sort-Object -Unique
 
 $set1Hash = @{}
 $set2Hash = @{}
-$setsToProcess = @($Set1, $Set1Hash), @($Set2, $Set2Hash)
+$setsToProcess = @($Title1, $Set1Hash), @($Title2, $Set2Hash)
 
 foreach($set in $setsToProcess)
 {
     $set[0] | Foreach-Object {
-        if($PSBoundParameters.ContainsKey("ValueProperty")) { $value = $_.$ValueProperty }
-        else { $value = 1 }
-        
-        if($PSBoundParameters.ContainsKey("KeyProperty")) { $_ = $_.$KeyProperty }
-
-        $set[1][$_] = $value
+         $value = 1 
+         $set[1][$_] = $value
     }
 }
 
-## Calculate the vector / cosine similarity of the two sets
-## based on their keys and values.
 $dot = 0
 $mag1 = 0
 $mag2 = 0
@@ -102,29 +82,8 @@ foreach($key in $allkeys)
 $mag1 = [Math]::Sqrt($mag1)
 $mag2 = [Math]::Sqrt($mag2)
 
-## Return the result
 return [Math]::Round($dot / ($mag1 * $mag2), 3)
-
 }
-
-$i=0
-
-$anyPosts
-
-Foreach($post in $anyPosts) {
-    
-    $i++
-    if($i%50 -eq 0) {write-host $i ' of ' $anyPosts.Count}
-    
-    $anyPosts |  & {process {  if( (Measure-TitleSimilarity $post.title $_.title) -gt .1){ $_.SimTitles +=1}}}
-     #Where-Object {$_.source -ne $post.source} |   
-    }
-    
-return $anyPosts
-
-}
-
-
 
 Function Get-Posts ($anyXMLfeed, $anyname)
 { $fields = 'title','description','pubDate','link'
@@ -322,17 +281,29 @@ foreach($term in $dirtylaundryterms){
     
     }
     $OldPosts = Import-CSV -Path "\\dcms2ms\Privacy Audit and Logging\TestScript\DirtyLaundry.csv" `
-    | Where-Object {$_.PullDate -gt (Get-Date).AddDays(-2)  }
+    | Where-Object {$_.PullDate -gt (Get-Date).AddDays(-3)  }
     $dirtylaundry = $filteredposts | Sort-object -Unique -Property Title | Select-Object -Property title, description, link, source, SimTitles, PubDate, PullDate 
     ## Reset sim titles to zero??????
     $NewPosts = ($OldPosts + $filteredposts | Sort-object -Unique -Property Title)|Sort-Object -Unique -Property Title, PullDate, pubDate |Select-Object -Property title, description,link,source,SimTitles,PubDate,PullDate 
     
-    ###$NewPosts | & {process {$_.simTitles = 0}}
+    $NewPosts | & {process {$_.simTitles = 0}}
 
     write-host $NewPosts.Count '  - New posts, filtered for dirty laundry'
     
     ##Process for trending and save to dirty laundry
-    $TrendingTopics = $NewPosts | & {process {Get-SimTitles $_}}
+    write-host 'Processing Similar Titles'
+    $TrendingArray=@()
+    $TrendingOrder=@()
+    $TrendingArray = Get-WordCount $NewPosts
+    $TrendingOrder =$NewPosts.title | Foreach-object {Measure-TitleSimilarity $TrendingArray.name $_.Split(' ') } | Select-Object 
+    $i=0
+    foreach($title in $NewPosts.title){
+    write-host $TrendingOrder[$i] ' : '  $title
+    $i++
+    }
+
+
+    $TrendingTopics = $NewPosts
     ## $TrendingTopics = Get-SimTitles $NewPosts
     $TrendingTopics | Export-CSV -Path "\\dcms2ms\Privacy Audit and Logging\TestScript\DirtyLaundry.csv"
     $TrendingTopics = $TrendingTopics | Where-Object{$_.SimTitles -gt 2} |Sort-Object -Property SimTitles -Descending

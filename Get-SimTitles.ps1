@@ -1,4 +1,4 @@
-﻿Function Get-SimTitles ([psobject[]]$anyPosts)
+﻿Function Get-SimTitles ([psobject]$anyPosts)
 {
 ## Future state
 ##. 'I:\RSS_Project\Measure-TitleSimilarity.ps1'
@@ -52,8 +52,8 @@ if((-not $Title1) -or (-not $Title2))
 
 $Set1=@()
 $Set2=@()
-$Set1 = Get-CleanTitle $Title1
-$Set2 = Get-CleanTitle $Title2
+$Set1 = $Title1
+$Set2 = $Title2
 
 ## Figure out the unique set of items to be compared - either based on
 ## the key property (if specified), or the item value directly
@@ -104,18 +104,26 @@ return [Math]::Round($dot / ($mag1 * $mag2), 3)
 }
 
 $i=0
+$b=@()
 
-$anyPosts
+$b=$anyPosts
 
 Foreach($post in $anyPosts) {
     
     $i++
-    if($i%50 -eq 0) {write-host $i ' of ' $anyPosts.Count}
+    $post.title
+    if($i%10 -eq 0) {write-host $i ' of ' $anyPosts.Count}
     
-    $anyPosts |  & {process {  if( (Measure-TitleSimilarity $post.title $_.title) -gt .1){ $_.SimTitles +=1}}}
-     #Where-Object {$_.source -ne $post.source} |   
+    $b | Where-Object {$_.source -ne $post.source} | & {
+        process {
+            if((Measure-TitleSimilarity $_.title.split(' ') $post.title.Split(' ')) -gt .275) {
+                $_.SimTitles =$_.SimTitles +1
+            }
+        }
+        
     }
-    
-return $anyPosts
-
 }
+    
+return $b
+}
+Get-SimTitles $NewPosts
