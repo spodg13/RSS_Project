@@ -20,21 +20,27 @@ Function Get-WordCount($anyposts)
     return $frequency
 }
 
+
 Function Get-SimTitles([psobject]$NewPosts) {
 
-  $CKTitles = $NewPosts
+  $i=0
+  $end = $NewPosts.Count - 1
+  write-host 'starting'
 
-  foreach ($Ck in $CkTitles.title) {
-    $NewPosts | Where-Object {$_.source -ne $CKTitles.source} | & { 
-      process { 
-        if (($score=Measure-TitleSimilarity $Ck.split(' ') $_.title.split(' ')) -gt .5) 
-        {
-          $_.SimTitles = $_.SimTitles + 1 
-        } else { $results+= $score + '|'+ $ck + '|' + $score + '|' + $_.title} 
-       Set-Content -path 'I:\RSS_Project\results.txt' -value $results} 
-    } 
-  }
-}
+ 
+  For($i =0; $i -lt $end; $i++){
+    
+      $k=$i+1        
+      $k..$end | Where{{$NewPosts[$i].source -ne $NewPosts[$_].source}} |
+      Where-Object {(Measure-TitleSimilarity $NewPosts[$i].title.split(' ') $NewPosts[$_].title.split(' ')) -gt .35}  |
+       & {process {$NewPosts[$_].SimTitles = $NewPosts[$_].SimTitles + 1} }
+            } 
+                       
+ }  
+  
+ 
+ 
+
 
 
 Function Measure-TitleSimilarity
@@ -293,18 +299,13 @@ foreach($term in $dirtylaundryterms){
     ##Process for trending and save to dirty laundry
     write-host 'Processing Similar Titles'
     $TrendingArray=@()
-    $TrendingOrder=@()
+    $TrendingTopics=@()
     $TrendingArray = Get-WordCount $NewPosts
-    $TrendingOrder =$NewPosts.title | Foreach-object {Measure-TitleSimilarity $TrendingArray.name $_.Split(' ') } | Select-Object 
-    $i=0
-    foreach($title in $NewPosts.title){
-    write-host $TrendingOrder[$i] ' : '  $title
-    $i++
-    }
+ 
 
-    $TrendingTopics = Get-SimTitles $NewPosts
+    Get-SimTitles $NewPosts
     $TrendingTopics | Export-CSV -Path "\\dcms2ms\Privacy Audit and Logging\TestScript\DirtyLaundry.csv"
-    $TrendingTopics = $TrendingTopics | Where-Object{$_.SimTitles -gt 2} |Sort-Object -Property SimTitles -Descending
+    $TrendingTopics = $NewPosts | Where-Object{$_.SimTitles -gt 2} |Sort-Object -Property SimTitles -Descending | Out-host
 
 
 Write-host 'Filtering Cities'
@@ -400,7 +401,7 @@ $posts | ConvertTo-Html -as Table -Property Title, description, link, pubDate, s
     -PreContent "<h4>Full Posts</h4><h3>RSS Feeds pulled: $strF <br> Twitter Accounts: $strT <br> $Subj <br> $strDate</h3>" | Out-File "a:\RSS_Feeds\Original_Posts.html"
 
 $dirtylaundry | ConvertTo-Html -as Table  -Property Title, description, link, pubDate, source -Head $Header `
-    -PreContent "<h4>DirtyLaundry: $dlCount posts</h4><h3>Terms: $strDL <br> $strDate</h3>" | Out-File "a:\RSS_Feeds\Dirty_Laundry.html"
+    -PreContent "<h4>Dirty Laundry: $dlCount posts</h4><h3>Terms: $strDL <br> $strDate</h3>" | Out-File "a:\RSS_Feeds\Dirty_Laundry.html"
 
 $filteredlocations | ConvertTo-Html -as Table -Property Title, description, link, pubDate, source -Head $Header `
     -PreContent "<h4>Only in SandraCities</h4><h3>$strDate </h3>" | Out-File "a:\RSS_Feeds\LocationFiltered.html"
@@ -412,14 +413,14 @@ $HTMLT = $TrendingTopics | ConvertTo-Html -As Table -Property Title, description
     -PreContent "<h4>Trending News:  Stories with three or more similar titles</h4>"
 
 $HTMLTF = $HTMLT -replace '<tr><td>(?<title>[^\<]+)<\/td><td>(?<desc>[^\<]+)<\/td><td>(?<weblink>[^\<]+)\<\/td><td>(?<pubDate>[^\<]+)', `
-    ('<tr><td>${title}</td><td>${desc}</td><td><a href="${weblink}">Full_Story_Click_Here</a><br><a href='+$POEmail+'${weblink}%0D%0A%0D%0ATitle: ${title}%0D%0ADescription: ${desc}%0D%0APublished on: ${pubDate}%0D%0A'`
+    ('<tr><td>${title}</td><td>${desc}</td><td><a href="${weblink}">Full_Story_Click_Here</a><br><a href='+$POEmail+'${weblink}%0D%0A%0D%0ATitle: ${title}%0D%0ADescription: %0D%0APublished on: ${pubDate}%0D%0A'`
     + $POData + '>Send to PO</a></td><td>${pubDate}</td>')
 
 $filtered = $filtered | ConvertTo-Html -as Table -Property Title, description, link, pubDate, source -Fragment `
     -PreContent "<h4>Feeds scraped - $feedCount  Twitter Accounts scraped:  $TweetCount </h4><h3> Filtered Feed Terms: $qry </h3>"|Out-String
 
 $HTMLfiltered = $filtered  -replace '<tr><td>(?<title>[^\<]+)<\/td><td>(?<desc>[^\<]+)<\/td><td>(?<weblink>[^\<]+)\<\/td><td>(?<pubDate>[^\<]+)', `
-    ('<tr><td>${title}</td><td>${desc}</td><td><a href="${weblink}">Full_Story_Click_Here</a><br><a href='+$POEmail+'${weblink}%0D%0A%0D%0ATitle: ${title}%0D%0ADescription: ${desc}%0D%0APublished on: ${pubDate}%0D%0A'`
+    ('<tr><td>${title}</td><td>${desc}</td><td><a href="${weblink}">Full_Story_Click_Here</a><br><a href='+$POEmail+'${weblink}%0D%0A%0D%0ATitle: ${title}%0D%0ADescription: %0D%0APublished on: ${pubDate}%0D%0A'`
     + $POData + '>Send to PO</a></td><td>${pubDate}</td>')
 
 
