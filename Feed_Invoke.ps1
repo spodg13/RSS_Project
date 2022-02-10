@@ -305,7 +305,7 @@ foreach($term in $dirtylaundryterms){
 
     Get-SimTitles $NewPosts
     $NewPosts | Export-CSV -Path "\\dcms2ms\Privacy Audit and Logging\RSS_Feeds\DirtyLaundry.csv"
-    $TrendingTopics = $NewPosts | Where-Object{$_.SimTitles -gt 2} |Sort-Object -Property SimTitles -Descending | Out-host
+    $TrendingTopics = $NewPosts | Where-Object{$_.SimTitles -gt 0} |Sort-Object -Property SimTitles -Descending | Select-Object -First 10 Out-host
 
 
 Write-host 'Filtering Cities'
