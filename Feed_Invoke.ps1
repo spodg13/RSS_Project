@@ -33,7 +33,7 @@ Function Get-SimTitles([psobject]$NewPosts) {
       $k=$i+1        
       $k..$end | Where{{$NewPosts[$i].source -ne $NewPosts[$_].source}} |
       Where-Object {(Measure-TitleSimilarity $NewPosts[$i].title.split(' ') $NewPosts[$_].title.split(' ')) -gt .35}  |
-       & {process {$NewPosts[$_].SimTitles = $NewPosts[$_].SimTitles + 1} }
+       & {process {$NewPosts[$_].SimTitles = $NewPosts[$_].SimTitles + 1; $NewPosts[$i].SimTitles+=1} }
             } 
                        
  }  
@@ -286,7 +286,7 @@ foreach($term in $dirtylaundryterms){
     $filteredposts += $posts | Where-Object {($_.description -match $term -or $_.Title -match $term)} | Where-Object{$_.description -notmatch "basketball"}
     
     }
-    $OldPosts = Import-CSV -Path "\\dcms2ms\Privacy Audit and Logging\TestScript\DirtyLaundry.csv" `
+    $OldPosts = Import-CSV -Path "\\dcms2ms\Privacy Audit and Logging\RSS_Feeds\DirtyLaundry.csv" `
     | Where-Object {$_.PullDate -gt (Get-Date).AddDays(-3)  }
     $dirtylaundry = $filteredposts | Sort-object -Unique -Property Title | Select-Object -Property title, description, link, source, SimTitles, PubDate, PullDate 
     ## Reset sim titles to zero??????
@@ -304,7 +304,7 @@ foreach($term in $dirtylaundryterms){
  
 
     Get-SimTitles $NewPosts
-    $TrendingTopics | Export-CSV -Path "\\dcms2ms\Privacy Audit and Logging\TestScript\DirtyLaundry.csv"
+    $NewPosts | Export-CSV -Path "\\dcms2ms\Privacy Audit and Logging\RSS_Feeds\DirtyLaundry.csv"
     $TrendingTopics = $NewPosts | Where-Object{$_.SimTitles -gt 2} |Sort-Object -Property SimTitles -Descending | Out-host
 
 
@@ -400,7 +400,7 @@ $strDate = (get-date).ToString("MM-dd-yyyy @ hh:mm tt")
 $posts | ConvertTo-Html -as Table -Property Title, description, link, pubDate, source -Head $Header `
     -PreContent "<h4>Full Posts</h4><h3>RSS Feeds pulled: $strF <br> Twitter Accounts: $strT <br> $Subj <br> $strDate</h3>" | Out-File "a:\RSS_Feeds\Original_Posts.html"
 
-$dirtylaundry | ConvertTo-Html -as Table  -Property Title, description, link, pubDate, source -Head $Header `
+$dirtylaundry | ConvertTo-Html -as Table  -Property Title, description, link, pubDate, source, SimTitles -Head $Header `
     -PreContent "<h4>Dirty Laundry: $dlCount posts</h4><h3>Terms: $strDL <br> $strDate</h3>" | Out-File "a:\RSS_Feeds\Dirty_Laundry.html"
 
 $filteredlocations | ConvertTo-Html -as Table -Property Title, description, link, pubDate, source -Head $Header `
