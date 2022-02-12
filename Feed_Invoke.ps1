@@ -287,7 +287,7 @@ $posts | ForEach-Object {
     
 }
 
-$posts | & {process {if($_.description -match '<p>'){$_.description = $_.description -replace '(<.+?>)',''}}}
+$posts | & {process {if($_.description -match '<p>' -or $_.description -match '<br'){$_.description = $_.description -replace '(<.+?>)',''}}}
 $posts | & {process {if($_.source -match 'SacBee'){$_.pubDate =$_.pubDate.replace('PST','-8')}}}
 $posts | & {process {if($_.title -match '\?{3}'){$_.title = $_.title -replace '\?{3}',"'"}}}
 $posts | & {process {if($_.description -match '\?{3}'){$_.description = $_.description -replace '\?{3}',"'"}}}
