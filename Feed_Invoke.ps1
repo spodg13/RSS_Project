@@ -47,7 +47,7 @@ Function Get-PostCount([psobject]$anyposts)
 Function Get-NullPost([psobject]$anyposts)
 {
     $strDate=Get-Date -Format "MM-dd-yyyy HH:mm tt"
-    $emptypost = @{
+    [xml]$emptypost = @{
                     title = '-'
                     description = '-'
                     link = '-'
@@ -182,10 +182,12 @@ Function Rename-LatestNews
     ## Deletes any date stamped feed older than 5 days
     $Path = "\\dcms2ms\Privacy Audit and Logging\RSS_Feeds\"
     $Item = Get-ChildItem -Path $Path | Where-Object {$_.Name -match 'RSS_Feed_' }| Sort-Object LastWriteTime -Descending |Select-Object -First 1
+    $Item2 = Get-ChildItem -Path $Path | Where-Object {$_.Name -match 'Sutter_Laundry_' }| Sort-Object LastWriteTime -Descending |Select-Object -First 1
     Copy-Item $Item.FullName -Destination "\\dcms2ms\Privacy Audit and Logging\RSS_Feeds\RSS_Feed.html"
+    Copy-Item $Item2.FullName -Destination "\\dcms2ms\Privacy Audit and Logging\RSS_Feeds\Sutter_Laundry.html"
     
     ## Remove feeds older than 5 days
-    Get-ChildItem -Path $Path | Where-Object {($_.Name -like 'RSS_Feed_*.html') -and ($_.LastWriteTime -lt (Get-Date).AddDays(-5))}  | Remove-Item
+    Get-ChildItem -Path $Path | Where-Object {($_.Name -like 'RSS_Feed_*.html' -or $_.Name -like 'Sutter_Laundry_*.html') -and ($_.LastWriteTime -lt (Get-Date).AddDays(-5))}  | Remove-Item
 }
 Function Reset-Authorization 
 {
@@ -413,7 +415,7 @@ TABLE tr:nth-child(odd) td:nth-child(even){ background: #E5E5E5; }
 [string]$CRTab = '%0D%0A     '
 [string]$CR = '%0D%0A'
 [string]$DCR ='%0D%0A%0D%0A'
-#[string]$POEmail ='"mailto:?cc=' + $env:UserName +'@sutterhealth.org&Subject=Media scraping identified a news event of interest [encrypt]&body='
+
 [string]$POEmail ='"mailto:?Subject=Media scraping identified a news event of interest [encrypt]&body='
 [string]$POBody = 'Based on the information below, and utilizing the HPP grid, Auditing and Monitoring Team would recommend the following: ' 
 $POBody += $DCR + $DCR + 'Recommend:' +$CRTab +'BTG' + $CRTab + 'No BTG' + $DCR + 'Link:  '
@@ -423,8 +425,7 @@ $POData += $DCR + 'Patient status:' + $CRTab + 'Patient is part of the general p
 $POData += $DCR +'PHI Sensitivity:' + $CRTab + 'No sensitive PHI Identifier' + $CRTab +'Sensitive PHI identifier (Y)' + $DCR
 $POData += 'Risk Exposure:' +$CRTab + 'No or low risk or harm associated with exposure' + $CRTab + 'Exposure may pose privacy violation and potential harm to patient and staff (Y)' + $DCR
 $POData += 'Total Yes Responses:      ' + $DCR + '1-2 Yes: Privacy Officer Discretion' + $CR + '3-4 Yes: Patient is HPP' + $DCR 
-#$POData += 'Options:' + $DCR + 'Temporary- If the patient is deemed a HPP, they are placed on the Protenus watch list for 30 days. Privacy Officer can request BTG depending on circumstances of the case. ' 
-#$POData += $DCR + 'Permanent- If the PO determines it is a permanent HPP, then the patient is placed on the Protenus watch list permanently and BTG is applied. "'  
+
 $POData += 'Options:' + $DCR + 'Temporary-Protenus watch list for 30 days. BTG-PO discretion.' 
 $POData += $DCR + 'Permanent-Protenus watch list permanently and BTG is applied."'  
 $FeedCount = $feeds.Count
@@ -447,7 +448,7 @@ $dirtylaundry | ConvertTo-Html -as Table  -Property Title, description, link, pu
 #if(( = Get-PostCount $Sutterposts)-eq 0) {$Sutterposts = Get-NullPost $Sutterposts}
 $pCount = $Sutterposts.Count
 $Sutterposts | ConvertTo-Html -as Table  -Property Title, description, link, pubDate, source, SimTitles -Head $Header `
-    -PreContent "<h4>Sutter mentioned Posts: $pCount posts</h4><h3>Terms: $strSut <br> $strDate</h3>" | Out-File "a:\RSS_Feeds\SutterPosts.html"
+    -PreContent "<h4>Sutter mentioned Posts: $pCount posts</h4><h3>Terms: $strSut <br> $strDate</h3>" ##| Out-File "a:\RSS_Feeds\SutterPosts.html"
 
 $Sutterpub = $Sutterposts | ConvertTo-Html -as Table  -Property Title, description, link, pubDate, source, SimTitles -Fragment `
     -PreContent "<h4>Sutter mentioned Posts: $pCount posts</h4><h3>Terms: $strSut <br> $strDate</h3>" 
@@ -475,8 +476,8 @@ $ResultsHTML = ConvertTo-Html -Body  "$HTMLfil", "$HTMLTF", "$HTMLSP"  -Title "R
     -PostContent "<br><h3> RSS Feeds pulled: $strF  <br>Feeds that failed : $badfeeds <br> Twitter Accounts: $strT <br> <br> Created on $strDate  by $env:UserName<br>`
     <a href='\\dcms2ms\Privacy Audit and Logging\RSS_Feeds\RSS_Feed.html'>Filtered Posts</a><br>`
     <a href='\\dcms2ms\Privacy Audit and Logging\RSS_Feeds\Dirty_Laundry.html'>Dirty Laundry</a><br> `
-    <a href='\\dcms2ms\Privacy Audit and Logging\RSS_Feeds\Original_Posts.html'>All Posts</a></h3>" `
-    |Out-String   ##Out-File "a:\TestScript\RSS_Feed.html"
+    <a href='\\dcms2ms\Privacy Audit and Logging\RSS_Feeds\Original_Posts.html'>All Posts</a></h3>" 
+       ##Out-File "a:\TestScript\RSS_Feed.html"
 
  
 
@@ -507,6 +508,8 @@ if($LiveRun) {
 }
 $strDate = (get-date).ToString("MM-dd-yyyy_hhmm_tt")
 $FileName = "\\dcms2ms\Privacy Audit and Logging\RSS_Feeds\RSS_Feed_" + $strDate +".html"
+$FileName2 = "\\dcms2ms\Privacy Audit and Logging\RSS_Feeds\Sutter_Laundry_" + $strDate +".html"
+$Sutterposts |Out-File $FileName2
 $ResultsHTML| Out-File $FileName 
 $filtered | Out-File "\\dcms2ms\Privacy Audit and Logging\RSS_Feeds\filtered.html"
 Rename-LatestNews
