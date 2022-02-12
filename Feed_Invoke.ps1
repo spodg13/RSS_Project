@@ -312,7 +312,7 @@ Write-host 'Filtering terms'
 
 foreach($term in $dirtylaundryterms.Terms){
    
-    $filteredposts += $posts | Where-Object {$_.pubDate -gt (Get-Date).AddDays(-4)  }|Where-Object {($_.description -match $term -or $_.Title -match $term)} |
+    $filteredposts += $posts | Where-Object {(Get-Date $_.pubDate) -gt (Get-Date).AddDays(-4)  }|Where-Object {($_.description -match $term -or $_.Title -match $term)} |
      Where-Object{$_.description -notmatch "basketball"}
     
     }
