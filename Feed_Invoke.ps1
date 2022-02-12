@@ -39,10 +39,35 @@ Function Get-SimTitles([psobject]$NewPosts) {
  }  
   
  
- 
+Function Get-PostCount([psobject]$anyposts)
+{ 
+        $apcount = $anyposts.count
+        return $apcount
+}
+Function Get-NullPost([psobject]$anyposts)
+{
+    $strDate=Get-Date -Format "MM-dd-yyyy HH:mm tt"
+    $emptypost = @{
+                    title = '-'
+                    description = '-'
+                    link = '-'
+                    pubDate = $strDate
+                    pullDate = $strDate
+                    source = '-'
+                    SimTitles = 0
+                    }
+    return $emptypost
 
+}
+Function Convert-Links($anyHTML, $POEmail, $POData)
+{
+    $result = $anyHTML -replace '<tr><td>(?<title>[^\<]+)<\/td><td>(?<desc>[^\<]+)<\/td><td>(?<weblink>[^\<]+)\<\/td><td>(?<pubDate>[^\<]+)', `
+    ('<tr><td>${title}</td><td>${desc}</td><td><a href="${weblink}">Full_Story_Click_Here</a><br><a href='+$POEmail+'${weblink}%0D%0A%0D%0ATitle: ${title}%0D%0ADescription: %0D%0APublished on: ${pubDate}%0D%0A'`
+    + $POData + '>Send to PO</a></td><td>${pubDate}</td>')
 
+    return $result
 
+}
 Function Measure-TitleSimilarity
 {
 ## Based on VectorSimilarity by .AUTHOR Lee Holmes 
@@ -194,6 +219,9 @@ $filteredlocations = @()
 $filteredposts = @()
 $finalcut =@()
 $badfeeds=@()
+$dirtylaundryterms=@()
+$sutterposts= @()
+$medical =@()
 
 ####################################
 ##
@@ -201,8 +229,9 @@ $badfeeds=@()
 ##
 ####################################
 
-$dirtylaundryterms = @('accident','armed','arrest','collision','crash','DUI','fatal','hit-and-run','homicide','shooting','shot','suspects','Sutter','victim')
-$medical =@('injuries','injured','injury','hospitalized','hospital','death','died','dies','killed','wounded')
+$dirtylaundryterms = Import-CSV -Path "\\dcms2ms\Privacy Audit and Logging\RSS_Feeds\Data\DirtyLaundryTerms.csv" |Select-Object -Property Terms
+$Sutterterms = Import-CSV -Path "\\dcms2ms\Privacy Audit and Logging\RSS_Feeds\Data\MedicalTerms.csv" |Select-Object -Property Sutter_Words
+$medical =Import-CSV -Path "\\dcms2ms\Privacy Audit and Logging\RSS_Feeds\Data\MedicalTerms.csv" |Select-Object -Property Terms
 #$cities = @('Antioch','Auburn','Brentwood','Citrus Heights','Elk Grove','Fairfield','Lodi','Oakdale','Oakland','Richmond','Rocklin','Roseville','Sacramento','San Francisco','San Jose','Stockton','Tracy','Vacaville','Vallejo','Yuba City')
 $cities = Import-Csv -Path "\\dcms2ms\Privacy Audit and Logging\RSS_Feeds\Data\Cities.csv" | Select-Object -Property Name
 $feeds = Import-CSV -Path "\\dcms2ms\Privacy Audit and Logging\RSS_Feeds\Data\Feeds.csv" | Where-Object {$_.Type -eq 'RSS'}| Select-Object -Property Link, Name
@@ -281,22 +310,30 @@ $InitPosts
 
 Write-host 'Filtering terms'
 
-foreach($term in $dirtylaundryterms){
-    
+foreach($term in $dirtylaundryterms.Terms){
+   
     $filteredposts += $posts | Where-Object {$_.pubDate -gt (Get-Date).AddDays(-4)  }|Where-Object {($_.description -match $term -or $_.Title -match $term)} |
      Where-Object{$_.description -notmatch "basketball"}
     
     }
+
+write-host 'Filtering for Sutter terms'
+foreach($term in $Sutterterms.Sutter_Words) {
+    
+    $Sutterposts += $posts | Where-Object {(Get-Date $_.pubDate) -gt (Get-Date).AddDays(-4)  }|Where-Object {($_.description -match $term -or $_.Title -match $term)} 
+
+    }
+
     $OldPosts = Import-CSV -Path "\\dcms2ms\Privacy Audit and Logging\RSS_Feeds\Data\DirtyLaundry.csv" `
-    | Where-Object {$_.pubDate -gt (Get-Date).AddDays(-4)  }
+    | Where-Object {(Get-Date $_.pubDate) -gt (Get-Date).AddDays(-4)  }
     #$dirtylaundry = $filteredposts | Sort-object -Unique -Property Title | Select-Object -Property title, description, link, source, SimTitles, PubDate, PullDate 
     
-    $dirtylaundry = ($OldPosts + $filteredposts | Sort-object -Unique -Property Title)|Sort-Object -Unique -Property Title, PullDate, pubDate |Select-Object -Property title, description,link,source,SimTitles,PubDate,PullDate 
+    $dirtylaundry = ($OldPosts + $filteredposts | Sort-object -Unique -Property Title)|Sort-Object -Unique -Property Title, pubDate, source |Select-Object -Property title, description,link,source,SimTitles,PubDate,PullDate 
     #  $NewPosts = ($OldPosts + $filteredposts | Sort-object -Unique -Property Title)|Sort-Object -Unique -Property Title, PullDate, pubDate |Select-Object -Property title, description,link,source,SimTitles,PubDate,PullDate 
     
     $dirtylaundry | & {process {$_.simTitles = 0}}
 
-    write-host $NewPosts.Count '  - New posts, filtered for dirty laundry'
+    write-host $dirtylaundry.Count '  - New posts, filtered for dirty laundry'
     
     ##Process for trending and save to dirty laundry
     write-host 'Processing Similar Titles'
@@ -312,16 +349,16 @@ foreach($term in $dirtylaundryterms){
 
 Write-host 'Filtering Cities'
 foreach($city in $cities){
-       
+     
     $filteredlocations += $dirtylaundry | where-object {($_.description -match $city.name -or $_.Title -match $city.name)} | Select-Object $_
 }
     $filteredlocations = $filteredlocations | Sort-Object -Unique -Property Title, Source | Select-Object
 
 Write-host 'Filtering Med terms'
-foreach($term in $medical) {
-
-    $finalcut +=$filteredlocations | where-object {($_.description -Match ('\b'+$term) -or $_.Title -match ('\b'+$term))} | Select-Object $_
-    }
+foreach($term in $medical.Terms) {
+    
+    $finalcut +=$filteredlocations | where-object {($_.description -Match ('\b'+$term) -or $_.Title -match ('\b'+$term))}  |Select-Object $_
+}
 
 
 ####################################
@@ -331,7 +368,7 @@ foreach($term in $medical) {
 ####################################
 
 
-$filtered = $finalcut | Sort-Object -Unique -Property Title, Source
+$filtered = $finalcut | Sort-Object -Unique -Property Title, Source | Sort-Object -Property SimTitles
 $Articles = $filtered.Count
 $Subj = 'Stories reviewed: ' + $posts.Count +' posts filtered to ' + $Articles + ' articles'
          
@@ -370,8 +407,9 @@ TABLE tr:nth-child(odd) td:nth-child(even){ background: #E5E5E5; }
 
 [string]$strT = $Tweeters.Name -join ", "
 [string]$strF = $feeds.Name -join ", " 
-[string]$strDL = $dirtylaundryterms -join ", "
-[string]$strMed = $medical -join ", " 
+[string]$strDL = $dirtylaundryterms.Terms -join ", "
+[string]$strSut = $Sutterterms.Sutter_Words -join ", "
+[string]$strMed = $medical.Terms -join ", " 
 [string]$CRTab = '%0D%0A     '
 [string]$CR = '%0D%0A'
 [string]$DCR ='%0D%0A%0D%0A'
@@ -391,7 +429,6 @@ $POData += 'Options:' + $DCR + 'Temporary-Protenus watch list for 30 days. BTG-P
 $POData += $DCR + 'Permanent-Protenus watch list permanently and BTG is applied."'  
 $FeedCount = $feeds.Count
 $TweetCount = $Tweeters.Count
-$dlCount = $dirtylaundry.Count
 if($badfeeds.Count -eq 0) {$badfeeds += 'None'}
 
 
@@ -399,11 +436,21 @@ if($badfeeds.Count -eq 0) {$badfeeds += 'None'}
 ##  %0D%0A for carriage return
 ##########################################################
 $strDate = (get-date).ToString("MM-dd-yyyy @ hh:mm tt")
+$pCount = Get-PostCount $posts
 $posts | ConvertTo-Html -as Table -Property Title, description, link, pubDate, source -Head $Header `
-    -PreContent "<h4>Full Posts</h4><h3>RSS Feeds pulled: $strF <br> Twitter Accounts: $strT <br> Stories Reviewed: $InitPosts <br> $strDate</h3>" | Out-File "a:\RSS_Feeds\Original_Posts.html"
+    -PreContent "<h4>Full Posts</h4><h3>RSS Feeds pulled: $strF <br> Twitter Accounts: $strT <br> Stories Reviewed: $pCount <br> $strDate</h3>" | Out-File "a:\RSS_Feeds\Original_Posts.html"
 
+if(($pCount=Get-PostCount $dirtylaundry) -eq 0) { $dirtylaundry = Get-NullPost $dirtylaundry}
 $dirtylaundry | ConvertTo-Html -as Table  -Property Title, description, link, pubDate, source, SimTitles -Head $Header `
-    -PreContent "<h4>Dirty Laundry: $dlCount posts</h4><h3>Terms: $strDL <br> $strDate</h3>" | Out-File "a:\RSS_Feeds\Dirty_Laundry.html"
+    -PreContent "<h4>Dirty Laundry: $pCount posts</h4><h3>Terms: $strDL <br> $strDate</h3>" | Out-File "a:\RSS_Feeds\Dirty_Laundry.html"
+
+#if(( = Get-PostCount $Sutterposts)-eq 0) {$Sutterposts = Get-NullPost $Sutterposts}
+$pCount = $Sutterposts.Count
+$Sutterposts | ConvertTo-Html -as Table  -Property Title, description, link, pubDate, source, SimTitles -Head $Header `
+    -PreContent "<h4>Sutter mentioned Posts: $pCount posts</h4><h3>Terms: $strSut <br> $strDate</h3>" | Out-File "a:\RSS_Feeds\SutterPosts.html"
+
+$Sutterpub = $Sutterposts | ConvertTo-Html -as Table  -Property Title, description, link, pubDate, source, SimTitles -Fragment `
+    -PreContent "<h4>Sutter mentioned Posts: $pCount posts</h4><h3>Terms: $strSut <br> $strDate</h3>" 
 
 $filteredlocations | ConvertTo-Html -as Table -Property Title, description, link, pubDate, source -Head $Header `
     -PreContent "<h4>Only in SandraCities</h4><h3>$strDate </h3>" | Out-File "a:\RSS_Feeds\LocationFiltered.html"
@@ -414,20 +461,17 @@ $filtered | ConvertTo-Html -as Table -Property Title, description, link, pubDate
 $HTMLT = $TrendingTopics | ConvertTo-Html -As Table -Property Title, description, link, pubDate,  source, SimTitles -Fragment `
     -PreContent "<h4>Trending News:  Stories with three or more similar titles</h4><h3>Only filtered on dirty laundry terms: $strDL</h3>"
 
-$HTMLTF = $HTMLT -replace '<tr><td>(?<title>[^\<]+)<\/td><td>(?<desc>[^\<]+)<\/td><td>(?<weblink>[^\<]+)\<\/td><td>(?<pubDate>[^\<]+)', `
-    ('<tr><td>${title}</td><td>${desc}</td><td><a href="${weblink}">Full_Story_Click_Here</a><br><a href='+$POEmail+'${weblink}%0D%0A%0D%0ATitle: ${title}%0D%0ADescription: %0D%0APublished on: ${pubDate}%0D%0A'`
-    + $POData + '>Send to PO</a></td><td>${pubDate}</td>')
-
-$filtered = $filtered | ConvertTo-Html -as Table -Property Title, description, link, pubDate, source -Fragment `
+$filtered = $filtered | ConvertTo-Html -as Table -Property Title, description, link, pubDate, source, SimTitles -Fragment `
     -PreContent "<h4>Feeds scraped - $feedCount  Twitter Accounts scraped:  $TweetCount<br> $Subj </h4><h3> Filtered for dirty laundry, cities and medical terms </h3>"|Out-String
 
-$HTMLfiltered = $filtered  -replace '<tr><td>(?<title>[^\<]+)<\/td><td>(?<desc>[^\<]+)<\/td><td>(?<weblink>[^\<]+)\<\/td><td>(?<pubDate>[^\<]+)', `
-    ('<tr><td>${title}</td><td>${desc}</td><td><a href="${weblink}">Full_Story_Click_Here</a><br><a href='+$POEmail+'${weblink}%0D%0A%0D%0ATitle: ${title}%0D%0ADescription: %0D%0APublished on: ${pubDate}%0D%0A'`
-    + $POData + '>Send to PO</a></td><td>${pubDate}</td>')
+$filtered
+
+$HTMLTF = Convert-Links $HTMLT $POEmail $POData 
+$HTMLSP = Convert-Links $Sutterpub $POEmail $POData
+$HTMLFil = Convert-Links $filtered $POEmail $POData
 
 
-
-$ResultsHTML = ConvertTo-Html -Body  "$HTMLfiltered", "$HTMLTF" -Title "RSS Feed Report" -Head $Header `
+$ResultsHTML = ConvertTo-Html -Body  "$HTMLfil", "$HTMLTF", "$HTMLSP"  -Title "RSS Feed Report" -Head $Header `
     -PostContent "<br><h3> RSS Feeds pulled: $strF  <br>Feeds that failed : $badfeeds <br> Twitter Accounts: $strT <br> <br> Created on $strDate  by $env:UserName<br>`
     <a href='\\dcms2ms\Privacy Audit and Logging\RSS_Feeds\RSS_Feed.html'>Filtered Posts</a><br>`
     <a href='\\dcms2ms\Privacy Audit and Logging\RSS_Feeds\Dirty_Laundry.html'>Dirty Laundry</a><br> `
@@ -453,7 +497,7 @@ Import-Csv -Path "\\dcms2ms\Privacy Audit and Logging\RSS_Feeds\Data\Variable.cs
 if($LiveRun) {
     $props = @{
         From = $CCGroup
-        To= $CCGroup
+        To= $TTGroup
         CC= $CCGroup
         Subject = 'RSS Feeds'
         Body = $ResultsHTML 
