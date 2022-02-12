@@ -368,7 +368,7 @@ foreach($term in $medical.Terms) {
 ####################################
 
 
-$filtered = $finalcut | Sort-Object -Unique -Property Title, Source | Sort-Object -Property SimTitles
+$filtered = $finalcut | Sort-Object -Unique -Property Title, Source | Sort-Object -Property SimTitles -Descending
 $Articles = $filtered.Count
 $Subj = 'Stories reviewed: ' + $posts.Count +' posts filtered to ' + $Articles + ' articles'
          
