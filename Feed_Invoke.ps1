@@ -224,6 +224,8 @@ $badfeeds=@()
 $dirtylaundryterms=@()
 $sutterposts= @()
 $medical =@()
+## no posts older than cutoff
+$cutoff = (Get-Date).AddDays(-4)
 
 ####################################
 ##
@@ -284,7 +286,6 @@ $posts | ForEach-Object {
     } 
     
 }
-$ic=[Globalization.CultureInfo]::InvariantCulture
 
 $posts | & {process {if($_.description -match '<p>'){$_.description = $_.description -replace '(<.+?>)',''}}}
 $posts | & {process {if($_.source -match 'SacBee'){$_.pubDate =$_.pubDate.replace('PST','-8')}}}
@@ -301,9 +302,6 @@ $posts | ForEach-Object {
   ##'ddd dd MMM yyyy HH:mm:ss z'
    }            
     
-#$posts | Format-Table
-$InitPosts
-
 ####################################
 ##
 ##  Filter based on $qry terms and $Cities
@@ -314,7 +312,7 @@ Write-host 'Filtering terms'
 
 foreach($term in $dirtylaundryterms.Terms){
    
-    $filteredposts += $posts | Where-Object {(Get-Date $_.pubDate) -gt (Get-Date).AddDays(-4)  }|Where-Object {($_.description -match $term -or $_.Title -match $term)} |
+    $filteredposts += $posts | Where-Object {(Get-Date $_.pubDate) -gt $cutoff  }|Where-Object {($_.description -match $term -or $_.Title -match $term)} |
      Where-Object{$_.description -notmatch "basketball"}
     
     }
@@ -322,20 +320,25 @@ foreach($term in $dirtylaundryterms.Terms){
 write-host 'Filtering for Sutter terms'
 foreach($term in $Sutterterms.Sutter_Words) {
     
-    $Sutterposts += $posts | Where-Object {(Get-Date $_.pubDate) -gt (Get-Date).AddDays(-4)  }|Where-Object {($_.description -match $term -or $_.Title -match $term)} 
+    $Sutterposts += $posts | Where-Object {(Get-Date $_.pubDate) -gt $cutoff  }|Where-Object {($_.description -match $term -or $_.Title -match $term)} 
 
     }
 
     $OldPosts = Import-CSV -Path "\\dcms2ms\Privacy Audit and Logging\RSS_Feeds\Data\DirtyLaundry.csv" `
     | Where-Object {(Get-Date $_.pubDate) -gt (Get-Date).AddDays(-4)  }
-    #$dirtylaundry = $filteredposts | Sort-object -Unique -Property Title | Select-Object -Property title, description, link, source, SimTitles, PubDate, PullDate 
+    
+    $OldSutter = Import-CSV -Path "\\dcms2ms\Privacy Audit and Logging\RSS_Feeds\Data\SutterLaundry.csv" `
+    | Where-Object {(Get-Date $_.pubDate) -gt (Get-Date).AddDays(-4)  }
+
+    $sutterlaundry = ($OldSutter + $sutterposts | Sort-object -Unique -Property Title)|Sort-Object -Unique -Property Title, pubDate, source |Select-Object -Property title, description,link,source,SimTitles,PubDate,PullDate 
     
     $dirtylaundry = ($OldPosts + $filteredposts | Sort-object -Unique -Property Title)|Sort-Object -Unique -Property Title, pubDate, source |Select-Object -Property title, description,link,source,SimTitles,PubDate,PullDate 
     #  $NewPosts = ($OldPosts + $filteredposts | Sort-object -Unique -Property Title)|Sort-Object -Unique -Property Title, PullDate, pubDate |Select-Object -Property title, description,link,source,SimTitles,PubDate,PullDate 
     
     $dirtylaundry | & {process {$_.simTitles = 0}}
 
-    write-host $dirtylaundry.Count '  - New posts, filtered for dirty laundry'
+    write-host $dirtylaundry.Count '  - posts filtered for dirty laundry'
+    write-host $sutterlaundry.count ' - posts filtered for sutter laundry'
     
     ##Process for trending and save to dirty laundry
     write-host 'Processing Similar Titles'
@@ -437,21 +440,19 @@ if($badfeeds.Count -eq 0) {$badfeeds += 'None'}
 ##  %0D%0A for carriage return
 ##########################################################
 $strDate = (get-date).ToString("MM-dd-yyyy @ hh:mm tt")
+$cutoff =$cutoff.ToString("MM-dd-yyyy @ hh:mm tt")
 $pCount = Get-PostCount $posts
 $posts | ConvertTo-Html -as Table -Property Title, description, link, pubDate, source -Head $Header `
     -PreContent "<h4>Full Posts</h4><h3>RSS Feeds pulled: $strF <br> Twitter Accounts: $strT <br> Stories Reviewed: $pCount <br> $strDate</h3>" | Out-File "a:\RSS_Feeds\Original_Posts.html"
 
 if(($pCount=Get-PostCount $dirtylaundry) -eq 0) { $dirtylaundry = Get-NullPost $dirtylaundry}
 $dirtylaundry | ConvertTo-Html -as Table  -Property Title, description, link, pubDate, source, SimTitles -Head $Header `
-    -PreContent "<h4>Dirty Laundry: $pCount posts</h4><h3>Terms: $strDL <br> $strDate</h3>" | Out-File "a:\RSS_Feeds\Dirty_Laundry.html"
+    -PreContent "<h4>Dirty Laundry: $pCount posts since $cutoff</h4><h3>Terms: $strDL <br> $strDate</h3>" | Out-File "a:\RSS_Feeds\Dirty_Laundry.html"
 
 #if(( = Get-PostCount $Sutterposts)-eq 0) {$Sutterposts = Get-NullPost $Sutterposts}
-$pCount = $Sutterposts.Count
-$Sutterposts | ConvertTo-Html -as Table  -Property Title, description, link, pubDate, source, SimTitles -Head $Header `
-    -PreContent "<h4>Sutter mentioned Posts: $pCount posts</h4><h3>Terms: $strSut <br> $strDate</h3>" ##| Out-File "a:\RSS_Feeds\SutterPosts.html"
-
-$Sutterpub = $Sutterposts | ConvertTo-Html -as Table  -Property Title, description, link, pubDate, source, SimTitles -Fragment `
-    -PreContent "<h4>Sutter mentioned Posts: $pCount posts</h4><h3>Terms: $strSut <br> $strDate</h3>" 
+$pCount = $Sutterlaundry.Count
+$Sutterpub = $Sutterlaundry | ConvertTo-Html -as Table  -Property Title, description, link, pubDate, source, SimTitles -Fragment `
+    -PreContent "<h4>Sutter mentioned Posts: $pCount posts since $cutoff</h4><h3>Terms: $strSut <br> $strDate</h3>" 
 
 $filteredlocations | ConvertTo-Html -as Table -Property Title, description, link, pubDate, source -Head $Header `
     -PreContent "<h4>Only in SandraCities</h4><h3>$strDate </h3>" | Out-File "a:\RSS_Feeds\LocationFiltered.html"
@@ -478,11 +479,16 @@ $ResultsHTML = ConvertTo-Html -Body  "$HTMLfil", "$HTMLTF", "$HTMLSP"  -Title "R
     <a href='\\dcms2ms\Privacy Audit and Logging\RSS_Feeds\Dirty_Laundry.html'>Dirty Laundry</a><br> `
     <a href='\\dcms2ms\Privacy Audit and Logging\RSS_Feeds\Original_Posts.html'>All Posts</a></h3>" 
        ##Out-File "a:\TestScript\RSS_Feed.html"
+$SutterLaundryHTML = ConvertTo-Html -Body  "$HTMLSP"  -Title "Sutter RSS Feed Report" -Head $Header `
+    -PostContent "<br><h3> RSS Feeds pulled: $strF   <br>Feeds that failed : $badfeeds <br> Twitter Accounts: $strT <br> <br> Created on $strDate  by $env:UserName<br>`
+    <a href='\\dcms2ms\Privacy Audit and Logging\RSS_Feeds\RSS_Feed.html'>Filtered Posts</a><br>`
+    <a href='\\dcms2ms\Privacy Audit and Logging\RSS_Feeds\Dirty_Laundry.html'>Dirty Laundry</a><br> `
+    <a href='\\dcms2ms\Privacy Audit and Logging\RSS_Feeds\Original_Posts.html'>All Posts</a></h3>" 
 
  
 
 # For testing purposes - so I don't bombard with emails
-$LiveRun = $true
+$LiveRun = $false
 
 ####################################
 ##
@@ -509,7 +515,7 @@ if($LiveRun) {
 $strDate = (get-date).ToString("MM-dd-yyyy_hhmm_tt")
 $FileName = "\\dcms2ms\Privacy Audit and Logging\RSS_Feeds\RSS_Feed_" + $strDate +".html"
 $FileName2 = "\\dcms2ms\Privacy Audit and Logging\RSS_Feeds\Sutter_Laundry_" + $strDate +".html"
-$Sutterposts |Out-File $FileName2
+$SutterLaundryHTML |Out-File $FileName2
 $ResultsHTML| Out-File $FileName 
 $filtered | Out-File "\\dcms2ms\Privacy Audit and Logging\RSS_Feeds\filtered.html"
 Rename-LatestNews
