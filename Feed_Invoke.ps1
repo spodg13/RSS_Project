@@ -20,6 +20,57 @@ Function Get-WordCount($anyposts)
     return $frequency
 }
 
+Function ConvertTo-WordSets( [psobject] $Posts )
+{
+
+    # preprocess each post to break its title into word counts 
+    # so we don't need to do it every time we compare 2 posts
+    # Courtesy stackoverflow @mclayton
+
+    foreach( $post in $Posts )
+    {
+        $set = new-object PSCustomObject -Property ([ordered] @{
+            "Post"   = $post
+            "Title"  = $post.Title.Trim()
+            "Words"  = $null
+            "Counts" = $null
+        });
+        $set.Words  = $set.Title.Split(" ");
+        $set.Counts = $set.Words `
+            | group-object `
+            | foreach-object `
+                -Begin   { $counts = @{} } `
+                -Process { $counts.Add($_.Name, $_.Count) } `
+                -End     { $counts };
+        write-output $set;
+    }
+
+}
+
+
+Function Get-SimTitlesMC( [psobject] $NewPosts )
+{
+
+    # instead of comparing every object to every object, just compare unique combinations
+    # e.g. X compared to Y is the same as Y compared to X so score them both at the same time
+    # (and we don't need to compare an object to itself either)
+    # Courtesy stackoverflow @mclayton
+
+    for( $i = 0; $i -lt $NewPosts.Length; $i++ )
+    {
+        $left = $NewPosts[$i];
+        for( $j = $i + 1; $j -lt $NewPosts.Length; $j++ )
+        {
+            $right = $NewPosts[$j];
+            if ((Measure-TitleSimilarityMC $left $right) -gt .35)
+            {
+                $left.Post.SimTitles  = $left.Post.SimTitles + 1;
+                $right.Post.SimTitles = $right.Post.SimTitles + 1;
+            } 
+        } 
+    }
+
+}
 
 Function Get-SimTitles([psobject]$NewPosts) {
 
@@ -68,6 +119,7 @@ Function Convert-Links($anyHTML, $POEmail, $POData)
     return $result
 
 }
+
 Function Measure-TitleSimilarity
 {
 ## Based on VectorSimilarity by .AUTHOR Lee Holmes 
@@ -114,6 +166,36 @@ $mag1 = [Math]::Sqrt($mag1)
 $mag2 = [Math]::Sqrt($mag2)
 
 return [Math]::Round($dot / ($mag1 * $mag2), 3)
+}
+Function Measure-TitleSimilarityMC
+{
+    param
+    (
+        [Parameter(Position = 0)]
+        $Left,
+        [Parameter(Position = 1)]   
+        $Right
+    ) 
+
+    # we can use the pre-processed word counts now
+
+    $allkeys = $Left.Words + $Right.Words | Sort-Object -Unique
+
+    $dot = 0
+    $mag1 = 0
+    $mag2 = 0
+
+    foreach($key in $allkeys)
+    {
+        $dot  += $Left.Counts[$key] * $Right.Counts[$key]
+        $mag1 += $Left.Counts[$key] * $Left.Counts[$key]
+        $mag2 += $Right.Counts[$key] * $Right.Counts[$key]
+    }
+
+    $mag1 = [Math]::Sqrt($mag1)
+    $mag2 = [Math]::Sqrt($mag2)
+
+    return [Math]::Round($dot / ($mag1 * $mag2), 3)
 }
 
 Function Get-Posts ($anyXMLfeed, $anyname)
@@ -234,7 +316,7 @@ $cutoff = (Get-Date).AddDays(-4)
 ####################################
 
 $dirtylaundryterms = Import-CSV -Path "\\dcms2ms\Privacy Audit and Logging\RSS_Feeds\Data\DirtyLaundryTerms.csv" |Select-Object -Property Terms
-$Sutterterms = Import-CSV -Path "\\dcms2ms\Privacy Audit and Logging\RSS_Feeds\Data\MedicalTerms.csv" |Select-Object -Property Sutter_Words
+$Sutterterms = Import-CSV -Path "\\dcms2ms\Privacy Audit and Logging\RSS_Feeds\Data\SutterTerms.csv" |Select-Object -Property Sutter_Words
 $medical =Import-CSV -Path "\\dcms2ms\Privacy Audit and Logging\RSS_Feeds\Data\MedicalTerms.csv" |Select-Object -Property Terms
 #$cities = @('Antioch','Auburn','Brentwood','Citrus Heights','Elk Grove','Fairfield','Lodi','Oakdale','Oakland','Richmond','Rocklin','Roseville','Sacramento','San Francisco','San Jose','Stockton','Tracy','Vacaville','Vallejo','Yuba City')
 $cities = Import-Csv -Path "\\dcms2ms\Privacy Audit and Logging\RSS_Feeds\Data\Cities.csv" | Select-Object -Property Name
@@ -345,11 +427,11 @@ foreach($term in $Sutterterms.Sutter_Words) {
     $TrendingArray=@()
     $TrendingTopics=@()
     $TrendingArray = Get-WordCount $dirtylaundry
- 
+    $WordSets = @(ConvertTo-WordSets $dirtylaundry)
 
-    Get-SimTitles $dirtylaundry
+    Get-SimTitles $dirtylaundry;
     $dirtylaundry | Export-CSV -Path "\\dcms2ms\Privacy Audit and Logging\RSS_Feeds\Data\DirtyLaundry.csv"
-    $TrendingTopics = $dirtylaundry | Where-Object{$_.SimTitles -gt 0} |Sort-Object -Property SimTitles -Descending | Select-Object -First 10 
+    $TrendingTopics = $dirtylaundry | Where-Object{$_.SimTitles -gt 1} |Sort-Object -Property SimTitles -Descending | Select-Object -First 15 
 
 
 Write-host 'Filtering Cities'
@@ -464,7 +546,7 @@ $HTMLT = $TrendingTopics | ConvertTo-Html -As Table -Property Title, description
     -PreContent "<h4>Trending News:  Stories with three or more similar titles</h4><h3>Only filtered on dirty laundry terms: $strDL</h3>"
 
 $filtered = $filtered | ConvertTo-Html -as Table -Property Title, description, link, pubDate, source, SimTitles -Fragment `
-    -PreContent "<h4>Feeds scraped - $feedCount  Twitter Accounts scraped:  $TweetCount<br> $Subj </h4><h3> Filtered for dirty laundry, cities and medical terms </h3>"|Out-String
+    -PreContent "<h4>Final Cut</h4><h3>Feeds scraped - $feedCount  Twitter Accounts scraped:  $TweetCount<br> $Subj  Filtered for dirty laundry, cities and medical terms </h3>"|Out-String
 
 $filtered
 
