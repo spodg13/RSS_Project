@@ -427,9 +427,20 @@ foreach($term in $Sutterterms.Sutter_Words) {
     $TrendingArray=@()
     $TrendingTopics=@()
     $TrendingArray = Get-WordCount $dirtylaundry
+    write-host 'Processing WordSets'
+    
     $WordSets = @(ConvertTo-WordSets $dirtylaundry)
+    
+    write-host 'Processing Similar Titles'
+    
+    <#
+    $dirtylaundry | & {process {$_.simTitles = 0}}
+    Get-SimTitlesMC $WordSets;
+    #>
+    
+   
+    Get-SimTitles $dirtylaundry
 
-    Get-SimTitles $dirtylaundry;
     $dirtylaundry | Export-CSV -Path "\\dcms2ms\Privacy Audit and Logging\RSS_Feeds\Data\DirtyLaundry.csv"
     $TrendingTopics = $dirtylaundry | Where-Object{$_.SimTitles -gt 1} |Sort-Object -Property SimTitles -Descending | Select-Object -First 15 
 
