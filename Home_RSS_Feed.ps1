@@ -179,8 +179,11 @@ $filteredposts = @()
 $dirtylaundry=@()
 $finalcut =@()
 $badfeeds=@()
+$lighterside =@()
 $dl_file = "/Users/darrylgould/Library/Mobile Documents/com~apple~CloudDocs/Coding/RSS_Project/RSS_Project/Feeds/Dirty_Laundry.html"
+$dl_terms = "/Users/darrylgould/Library/Mobile Documents/com~apple~CloudDocs/Coding/RSS_Project/RSS_Project/Feeds/Data/DirtyLaundryTerms.csv"
 $post_file ="/Users/darrylgould/Library/Mobile Documents/com~apple~CloudDocs/Coding/RSS_Project/RSS_Project/Feeds/all_posts.html"
+$lighter_file = "/Users/darrylgould/Library/Mobile Documents/com~apple~CloudDocs/Coding/RSS_Project/RSS_Project/Feeds/lighter_posts.html"
 $RSS_file = "/Users/darrylgould/Library/Mobile Documents/com~apple~CloudDocs/Coding/RSS_Project/RSS_Project/Feeds/RSS_Out.html"
 $cutoff = (Get-Date).AddDays(-3)
 
@@ -190,7 +193,7 @@ $cutoff = (Get-Date).AddDays(-3)
 ##
 ####################################
 
-$dirtylaundryterms = @('accident','armed','arrest','collision','crash','DUI','fatal','hit-and-run','homicide','shooting','shot','suspects','Sutter','victim')
+$dirtylaundryterms = Import-CSV -Path $dl_terms | Select-Object -Property Terms
 $medical =@('injuries','injured','injury','hospitalized','hospital','death','died','dies','killed','wounded')
 $cities = @('Antioch','Auburn','Brentwood','Citrus Heights','Elk Grove','Fairfield','Lodi','Oakdale','Oakland','Richmond','Rocklin','Roseville','Sacramento','San Francisco','San Jose','Stockton','Tracy','Vacaville','Vallejo','Yuba City')
 #$cities = Import-Csv -Path "/Users/darrylgould/Library/Mobile Documents/com~apple~CloudDocs/Coding/RSS_Project/RSS_Project/Feeds/Cities.csv" | Select-Object -Property Name
@@ -214,12 +217,12 @@ foreach($feed in $feeds) {
     
 }
 foreach($Tweeter in $Tweeters){
-    #try{
+    try{
     $posts += Get-Tweets $Tweeter.Link $Tweeter.Name
-    #} Catch
-    #{ Reset-Authorization
-    #    $posts += Get-Tweets $Tweeter.Link $Tweeter.Name
-    #    }
+    } Catch
+    { Reset-Authorization
+        $posts += Get-Tweets $Tweeter.Link $Tweeter.Name
+        }
 }
 
 
@@ -236,10 +239,12 @@ $posts.Count
 $posts | Sort-Object -Property pubDate, title
 
 Write-host 'Filtering terms'
-
-foreach($term in $dirtylaundryterms){
+$lighterside = [System.Collections.ArrayList]$posts
+foreach($term in $dirtylaundryterms.Terms){
         $filteredposts += $posts | Where-Object {($_.description -match $term -or $_.Title -match $term)} | Where-Object{$_.description -notmatch "basketball"}
-}
+        $posts | Where-Object  {(($_.description -match $term -or $_.Title -match $term) -and $_.description -notmatch "basketball" )}| & {process{$lighterside.Remove($_)}}  
+    }
+      
 ##$dirtylaundry = $filteredposts | Sort-object -Unique -Property Title | Select-Object -Property title, description, link, source, SimTitles, PubDate, PullDate 
 
 $OldPosts = Import-CSV -Path "/Users/darrylgould/Library/Mobile Documents/com~apple~CloudDocs/Coding/RSS_Project/RSS_Project/Feeds/DirtyLaundry.csv"     |
@@ -300,19 +305,26 @@ TABLE tr:nth-child(odd) td:nth-child(even){ background: #E5E5E5; }
 "@
 ##########################################################
 
-$strT =  'None' #  $Tweeters.Name -join ", "
+$strT =  $Tweeters.Name -join ", "
 $strF = $feeds.Name -join ", " 
-$strDL = $dirtylaundryterms -join ", "
+$strDL = $dirtylaundryterms.Terms -join ", "
 $strDate = (get-date).ToString("MM-dd-yyyy @ hh:mm tt")
 $dlCount = $dirtylaundry.count
 $feedCount = $feeds.count
-$TweetCount = 0
+$TweetCount = $Tweeters.Count
 
 Convert-Links ($posts | ConvertTo-Html -as Table -Property Title, description, link, pubDate, source, SimTitles -Head $Header `
     -PreContent "<h4>Full Posts</h4><h3>RSS Feeds pulled: $strF <br> Twitter Accounts: $strT <br> $Subj <br> $strDate</h3>" `
     -PostContent "<br><h3> RSS Feeds pulled: $strF  <br>Feeds that failed : $badfeeds <br> Twitter Accounts: $strT <br> <br> Created on $strDate  by $env:USER<br>`
     <a href='$dl_file'>Dirty Laundry</a><br> `
     <a href='$RSS_file'>City Filtered</a></h3>" ) | Out-File $post_file
+
+
+Convert-Links ($lighterside |Sort-Object -Unique -Property Title, Source | ConvertTo-Html -as Table -Property Title, description, link, pubDate, source, SimTitles -Head $Header `
+    -PreContent "<h4>Lighter News</h4><h3>RSS Feeds pulled: $strF <br> Twitter Accounts: $strT <br> $Subj <br> $strDate</h3>" `
+    -PostContent "<br><h3> RSS Feeds pulled: $strF  <br>Feeds that failed : $badfeeds <br> Twitter Accounts: $strT <br> <br> Created on $strDate  by $env:USER<br>`
+    <a href='$dl_file'>Dirty Laundry</a><br> `
+    <a href='$RSS_file'>City Filtered</a></h3>" ) | Out-File $lighter_file   
 
 Convert-Links($dirtylaundry | ConvertTo-Html -as Table  -Property Title, description, link, pubDate, source, SimTitles -Head $Header `
     -PreContent "<h4>DirtyLaundry: $dlCount posts</h4><h3>Terms: $strDL <br> $strDate</h3>" `
