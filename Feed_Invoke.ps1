@@ -62,10 +62,13 @@ Function Get-SimTitlesMC( [psobject] $NewPosts )
         for( $j = $i + 1; $j -lt $NewPosts.Length; $j++ )
         {
             $right = $NewPosts[$j];
-            if ((Measure-TitleSimilarityMC $left $right) -gt .35)
+            if ((Measure-TitleSimilarityMC $left $right) -gt .5)
             {
                 $left.Post.SimTitles  = $left.Post.SimTitles + 1;
                 $right.Post.SimTitles = $right.Post.SimTitles + 1;
+                write-host 'possible match: ' $left.Post.Title
+                write-host 'with: ' $right.Post.Title
+
             } 
         } 
     }
