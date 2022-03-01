@@ -445,6 +445,7 @@ foreach($term in $Sutterterms.Sutter_Words) {
     Get-SimTitles $dirtylaundry
 
     $dirtylaundry | Export-CSV -Path "\\dcms2ms\Privacy Audit and Logging\RSS_Feeds\Data\DirtyLaundry.csv"
+    $sutterlaundry | Export-CSV -Path "\\dcms2ms\Privacy Audit and Logging\RSS_Feeds\Data\SutterLaundry.csv"
     $TrendingTopics = $dirtylaundry | Where-Object{$_.SimTitles -gt 1} |Sort-Object -Property SimTitles -Descending | Select-Object -First 15 
 
 
@@ -548,7 +549,7 @@ $dirtylaundry | ConvertTo-Html -as Table  -Property Title, description, link, pu
 #if(( = Get-PostCount $Sutterposts)-eq 0) {$Sutterposts = Get-NullPost $Sutterposts}
 $pCount = $Sutterlaundry.Count
 $Sutterpub = $Sutterlaundry | ConvertTo-Html -as Table  -Property Title, description, link, pubDate, source, SimTitles -Fragment `
-    -PreContent "<h4>Sutter mentioned Posts: $pCount posts since $cutoff</h4><h3>Terms: $strSut <br> $strDate</h3>" 
+    -PreContent "<h4 id='Sutter'>Sutter mentioned Posts: $pCount posts since $cutoff</h4><h3>Terms: $strSut <br> $strDate</h3>" 
 
 $filteredlocations | ConvertTo-Html -as Table -Property Title, description, link, pubDate, source -Head $Header `
     -PreContent "<h4>Only in SandraCities</h4><h3>$strDate </h3>" | Out-File "a:\RSS_Feeds\LocationFiltered.html"
@@ -557,10 +558,11 @@ $filtered | ConvertTo-Html -as Table -Property Title, description, link, pubDate
     -PreContent "<h4>Medical Terms: $Articles posts</h4><h3>Terms: $strMed <br>$strDate </h3>" | Out-File "a:\RSS_Feeds\FinalCut.html"
 
 $HTMLT = $TrendingTopics | ConvertTo-Html -As Table -Property Title, description, link, pubDate,  source, SimTitles -Fragment `
-    -PreContent "<h4>Trending News:  Stories with three or more similar titles</h4><h3>Only filtered on dirty laundry terms: $strDL</h3>"
+    -PreContent "<h4 id='Trending'>Trending News:  Stories with three or more similar titles</h4><h3>Only filtered on dirty laundry terms: $strDL</h3>"
 
 $filtered = $filtered | ConvertTo-Html -as Table -Property Title, description, link, pubDate, source, SimTitles -Fragment `
-    -PreContent "<h4>Final Cut</h4><h3>Feeds scraped - $feedCount  Twitter Accounts scraped:  $TweetCount<br> $Subj  Filtered for dirty laundry, cities and medical terms </h3>"|Out-String
+    -PreContent "<h4>Feeds scraped - $feedCount  Twitter Accounts scraped:  $TweetCount<br> $Subj  Filtered for dirty laundry, cities and medical terms </h4> `
+    <br><h4>Final Cut</h4><br><h3><a href='#Trending'>Go to Trending Articles</a></h3><br><h3><a href='#Sutter'>Go to Sutter Articles</a></h3>"|Out-String
 
 $filtered
 
