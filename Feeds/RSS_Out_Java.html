@@ -1,0 +1,80 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<style>
+TABLE {border-width: 1px; border-style: solid; border-color: black; border-collapse: collapse;}
+TH {border-width: 1px; padding: 3px; border-style: solid; border-color: black; background-color: #2AA9A0; }
+TD {border-width: 1px; padding: 3px; border-style: solid; border-color: black;}
+h3{
+clear: both;
+font-size: 100%;
+margin-left: 5px;
+margin-top: 30px;
+color:#717276;
+}
+h4{
+color: black;
+font-weight: bold;
+font-size: 24px;
+}
+TABLE tr:nth-child(even) td:nth-child(even){  background: #BBBBBB; }
+TABLE tr:nth-child(odd) td:nth-child(odd){ background: #F2F2F2; }
+TABLE tr:nth-child(even) td:nth-child(odd){ background: #DDDDDD; }
+TABLE tr:nth-child(odd) td:nth-child(even){ background: #E5E5E5; }
+</style>
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+<script>
+$("#table tr").click(function(){
+   $(this).addClass('selected').siblings().removeClass('selected');    
+   var value=$(this).find('td:first').html();
+   alert(value);    
+});
+
+$('.ok').on('click', function(e){
+    alert($("#table tr.selected td:first").html());
+});
+</script> 
+</head><body>
+<h4>Feeds scraped - 6  Twitter Accounts scraped:  4 </h4><h3> Filtered Feed Terms: None </h3>
+<table>
+<colgroup><col/><col/><col/><col/><col/><col/></colgroup>
+<tr><th>title</th><th>description</th><th>link</th><th>pubDate</th><th>source</th><th>SimTitles</th></tr>
+<tr><td>One Killed In Shooting Friday Night In Stockton</td><td>One person was killed in a shooting Friday in Stockton, said the Stockton Police Department.</td><td><a href="https://sacramento.cbslocal.com/2022/02/12/one-killed-in-shooting-friday-night-in-stockton/">Full_Story_Click_Here</a></td><td>02-12-22 12:05 PM</td></td><td>RSS: CBS_Sac</td><td>3</td></tr>
+<tr id="1"><td>&#39;He was a child at heart&#39;: Stockton coach, special education teacher killed in shooting</td><td>A Stockton Unified School District employee is being remembered by loved ones as someone who was passionate about helping people both on the field and in the classroom. He was slain last week in a shooting.</td><td><input type="button" 
+                               value="submit" 
+                               onclick="show()" />Full_Story_Click_Here</a></td><td>02-14-22 08:03 PM</td></td><td>RSS: KCRA</td><td>2</td></tr>
+<tr><td>DA Boudin says San Francisco police used DNA from rape kits to arrest victims</td><td>San Francisco&#39;s District Attorney is going after the city&#39;s police department for a practice he says is considered routine.</td><td><a href="https://www.kron4.com/news/bay-area/da-boudin-says-san-francisco-police-used-dna-from-rape-kits-to-arrest-victims/">Full_Story_Click_Here</a></td><td>02-15-22 07:52 PM</td></td><td>RSS: KRON</td><td>2</td></tr>
+<tr><td>Driver escapes injury after road rage shooting incident on I-580 in Oakland, CHP says</td><td>The Honda was hit several times and a rear window was shattered, but luckily the driver was not hurt., according to CHP said.</td><td><a href="https://abc7news.com/oakland-580-shooting-park-blvd-freeway-i580-today/11568436/">Full_Story_Click_Here</a></td><td>02-15-22 06:09 PM</td></td><td>RSS: ABC-SFO</td><td>2</td></tr>
+<tr><td>Freeway shooting stems from road rage incident in Oakland: CHP</td><td>A road rage incident that led to a freeway shooting in Oakland is under investigation.</td><td><a href="https://www.kron4.com/news/bay-area/freeway-shooting-stems-from-road-rage-incident-in-oakland-chp/">Full_Story_Click_Here</a></td><td>02-15-22 04:18 PM</td></td><td>RSS: KRON</td><td>2</td></tr>
+<tr><td>San Francisco DA condemns police using rape victim DNA evidence to identify criminals</td><td>San Francisco District Attorney Chesa Boudin is denouncing the use of sexual assault victim DNA evidence in searching for possible crime suspects. </td><td><a href="https://www.kron4.com/news/bay-area/san-francisco-da-condemns-police-using-rape-victim-dna-evidence-to-identify-criminals/">Full_Story_Click_Here</a></td><td>02-14-22 06:25 PM</td></td><td>RSS: KRON</td><td>1</td></tr>
+<tr><td>1 Person Arrested On Drug-Related Charges In Yuba City</td><td>A man is under arrest on drug-related charges after someone saw two people passed out in a car and called the police.??</td><td><a href="https://sacramento.cbslocal.com/2022/02/15/arrest-drugs-car-yuba-city/">Full_Story_Click_Here</a></td><td>02-15-22 01:58 PM</td></td><td>RSS: CBS_Sac</td><td>1</td></tr>
+<tr><td>3 hurt in Sacramento shooting, police say</td><td>Three people were hurt Tuesday evening in a shooting, Sacramento police said.</td><td><a href="https://www.kcra.com/article/3-hurt-sacramento-shooting-police/39100267">Full_Story_Click_Here</a></td><td>02-15-22 07:17 PM</td></td><td>RSS: KCRA</td><td>1</td></tr>
+<tr><td>High-Speed Chase Ends In Crash In Roseville; 2 Minors Arrested, 3rd Suspect Taken To Hospital</td><td>A man is recovering after a high-speed chase ended with a violent crash in Roseville over the weekend.</td><td><a href="https://sacramento.cbslocal.com/2022/02/14/roseville-high-speed-police-chase-crash-riverside-cirby-way/">Full_Story_Click_Here</a></td><td>02-14-22 04:55 AM</td></td><td>RSS: CBS_Sac</td><td>1</td></tr>
+<tr><td>Sacramento shooting leaves 1 hospitalized, 2 others wounded</td><td>Three people were shot Tuesday evening on Acacia Avenue near Rio Linda Boulevard.</td><td><a href="https://fox40.com/news/local-news/sacramento-shooting-leaves-1-hospitalized-2-others-wounded/">Full_Story_Click_Here</a></td><td>02-15-22 07:27 PM</td></td><td>RSS: Fox40</td><td>0</td></tr>
+<tr><td>Sacramento County DA files charges in &#39;horrific&#39; murder of Emma Roark</td><td>SACRAMENTO COUNTY, Calif. (KTXL) &#39; The Sacramento County District Attorney&#39;s Office filed charges with special circumstances against the man suspected of sexually assaulting and killing a Rancho Cordova woman. Mikilo Morgan Rawls, 37, faces charges of murder, kidnap, rape and sodomy, as well as &quot;an allegation that the victim was bound or tied in the [...]</td><td><a href="https://fox40.com/news/local-news/sacramento-county-da-files-charges-in-horrific-murder-of-emma-roark/">Full_Story_Click_Here</a></td><td>02-14-22 01:10 PM</td></td><td>RSS: Fox40</td><td>0</td></tr>
+<tr><td>Roseville Police: Attempted car burglary becomes high-speed chase, multi-vehicle crash</td><td>One person was hospitalized after an attempted car burglary was spotted by police early Sunday morning resulting in a car chase and multi-vehicle crash.</td><td><a href="https://fox40.com/news/local-news/roseville-police-attempted-car-burglary-becomes-high-speed-chase-multi-vehicle-crash-injuring-2-people/">Full_Story_Click_Here</a></td><td>02-13-22 07:01 PM</td></td><td>RSS: Fox40</td><td>0</td></tr>
+<tr><td>Redding police announced two arrests for the sexual exploitation of children Friday. The arrests were part of their work with the Sacramento Valley Internet Crimes Against Children (ICAC) Task Force.
+https://t.co/Tf4fPWievC</td><td>Redding police announced two arrests for the sexual exploitation of children Friday. The arrests were part of their work with the Sacramento Valley Internet Crimes Against Children (ICAC) Task Force.
+https://t.co/Tf4fPWievC</td><td><a href="https://t.co/Tf4fPWievC">Full_Story_Click_Here</a></td><td>02-11-22 02:45 PM</td></td><td>Twitter: KRCR TV7</td><td>0</td></tr>
+<tr><td>Head-on collision blocks all northbound lanes of route 160 at Antioch Bridge</td><td>OAKLEY (BCN) - The California Highway Patrol reports that a head-on traffic collision early Monday closed the northbound lanes of State Route 160 in Oakley leading to the Antioch Bridge. Multiple agencies responded to a 12:53 a.m. report of the collision just south of the bridge and north of the Wilbur Avenue on-ramp, according to [...]</td><td><a href="https://www.kron4.com/news/head-on-collision-blocks-all-northbound-lanes-of-route-160-at-antioch-bridge/">Full_Story_Click_Here</a></td><td>02-14-22 05:15 AM</td></td><td>RSS: KRON</td><td>0</td></tr>
+<tr><td>Stockton Police Open Homicide Investigation After Body Found In Crashed Car</td><td>Stockton (CBS13) &#39; The Stockton Police Department has opened a homicide investigation after discovering a gunshot victim while responding to reports of a collision. Yesterday, at 8:38 p.m., police responded to reports of a collision at the 8100 block of Chateau Drive. When they arrived they discovered a 35-year-old male gunshot victim. Police contacted medics, [&amp;#8230;]</td><td><a href="https://sacramento.cbslocal.com/2022/02/15/stockton-police-man-shot/">Full_Story_Click_Here</a></td><td>02-15-22 09:14 AM</td></td><td>RSS: CBS_Sac</td><td>0</td></tr>
+<tr><td>Busy weekend for San Francisco police: 3 shootings, 2 injured</td><td>SAN FRANCISCO (KRON) - San Francisco police had a busy weekend, responding to three separate shootings late Saturday and early Sunday, among other incidents.?? In a tweet, San Francisco Police Department Investigations Commander Raj Vaswani stated that the first shooting was around 9:30 p.m. Saturday at the 400 block of Larkin Street in the Tenderloin.?? [...]</td><td><a href="https://www.kron4.com/news/bay-area/busy-weekend-for-san-francisco-police-3-shootings-2-injured/">Full_Story_Click_Here</a></td><td>02-14-22 06:03 AM</td></td><td>RSS: KRON</td><td>0</td></tr>
+<tr><td>3-month-old baby uninjured after &#39;butane honey oil lab&#39; explosion at Stockton hotel</td><td>STOCKTON, Calif. (KTXL) &#39; A 3-month-old baby was unharmed Monday morning when the windows of a room at the Stockton Inn were blown out. Around 8:20 a.m., the San Joaquin County Sheriff&#39;s Office said it received multiple calls of an explosion at the hotel on Waterloo Road, which is located just east of Highway 99. [...]</td><td><a href="https://fox40.com/news/local-news/sheriffs-office-explosion-in-stockton-leaves-several-people-hurt/">Full_Story_Click_Here</a></td><td>02-14-22 09:46 AM</td></td><td>RSS: Fox40</td><td>0</td></tr>
+<tr><td>3 arrested following illegal Oakland sideshow: police</td><td>Three people were arrested following an illegal sideshow in Oakland on Saturday night. </td><td><a href="https://www.kron4.com/news/bay-area/3-arrested-following-illegal-oakland-sideshow-police/">Full_Story_Click_Here</a></td><td>02-14-22 07:21 PM</td></td><td>RSS: KRON</td><td>0</td></tr>
+<tr><td>1 injured in shooting at San Francisco Safeway parking lot</td><td>One person was injured in a shooting in a San Francisco Safeway parking lot on Tuesday, according to police. </td><td><a href="https://www.kron4.com/news/bay-area/shooting-in-san-francisco-safeway-parking-lot-leaves-1-person-injured/">Full_Story_Click_Here</a></td><td>02-15-22 05:45 PM</td></td><td>RSS: KRON</td><td>0</td></tr>
+<tr><td>One woman is dead after a stabbing in Sacramento </td><td>When officers arrived on scene they located a female victim who was suffering from multiple stab wounds.</td><td><a href="https://www.kcra.com/article/woman-dead-stabbing-sacramento/39061160">Full_Story_Click_Here</a></td><td>02-13-22 11:00 AM</td></td><td>RSS: KCRA</td><td>0</td></tr>
+<tr><td>Vallejo police investigating homicide</td><td>Around 5:21 a.m., the Vallejo Police Department received a report that someone had been shot in an alley near Georgia Street and Sonoma Boulevard.</td><td><a href="https://www.kron4.com/news/bay-area/vallejo-police-investigating-saturday-homicide/">Full_Story_Click_Here</a></td><td>02-14-22 07:29 AM</td></td><td>RSS: KRON</td><td>0</td></tr>
+</table>
+
+<h4>Trending News:  Stories with three or more similar titles</h4> <table> <colgroup><col/><col/><col/><col/><col/><col/></colgroup> <tr><th>title</th><th>description</th><th>link</th><th>pubDate</th><th>source</th><th>SimTitles</th></tr> <tr><td>One Killed In Shooting Friday Night In Stockton</td><td>One person was killed in a shooting Friday in Stockton, said the Stockton Police Department.</td><td><a href="https://sacramento.cbslocal.com/2022/02/12/one-killed-in-shooting-friday-night-in-stockton/">Full_Story_Click_Here</a></td><td>02-12-22 12:05 PM</td></td><td>RSS: CBS_Sac</td><td>3</td></tr> <tr><td>Teens charged in shooting of off-duty officer in Harlem: NYPD</td><td>The off-duty officer was shot in the foot while attending a vigil for a community member at a West Harlem building, police said.</td><td><a href="https://www.kron4.com/news/national/teens-charged-in-shooting-of-off-duty-officer-in-harlem-nypd/">Full_Story_Click_Here</a></td><td>02-12-22 06:08 PM</td></td><td>RSS: KRON</td><td>3</td></tr> </table>
+<table>
+</table>
+<input type="button" id="tst" value="OK" onclick="fnselect()" />
+<input type="button" value="click" onclick="msg()"/> 
+<input type="button" 
+                               value="submit" 
+                               onclick="show()" />
+<br><h3> RSS Feeds pulled: KCRA, CBS_Sac, ABC-SFO, KSBW, Fox40, KRON  <br>Feeds that failed :  <br> Twitter Accounts: Mt. Shasta News, KAEF-North Coast, KRCR TV7, Mail Tribune <br> <br> Created on 02-15-2022 @ 08:59 PM  by darrylgould<br>
+    <a href='/Users/darrylgould/Library/Mobile Documents/com~apple~CloudDocs/Coding/RSS_Project/RSS_Project/Feeds/Dirty_Laundry.html'>Dirty Laundry</a><br> 
+    <a href='/Users/darrylgould/Library/Mobile Documents/com~apple~CloudDocs/Coding/RSS_Project/RSS_Project/Feeds/all_posts.html'>All Posts</a></h3>
+</body></html>

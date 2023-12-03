@@ -338,7 +338,8 @@ $HTMLT = $TrendingTopics | ConvertTo-Html -As Table -Property Title, description
 $HTMLTF = Convert-Links $HTMLT 
     
 $finalcut = $finalcut | ConvertTo-Html -as Table -Property Title, description, link, pubDate, source, SimTitles -Fragment `
-    -PreContent "<h4>Feeds scraped - $feedCount  Twitter Accounts scraped:  $TweetCount </h4><h3> Filtered Feed Terms: None </h3>"|Out-String
+    -PreContent "<h4>Feeds scraped - $feedCount  Twitter Accounts scraped:  $TweetCount </h4><h3> Filtered Feed Terms: None </h3> `
+    <h3> <a href='$lighter_file'>Lighter Posts</a></h3>"  | Out-String
 
 $HTMLfiltered = Convert-Links $finalcut  
 
@@ -346,5 +347,6 @@ $HTMLfiltered = Convert-Links $finalcut
 ConvertTo-Html -Body  "$HTMLfiltered", "$HTMLTF" -Title "RSS Feed Report" -Head $Header `
     -PostContent "<br><h3> RSS Feeds pulled: $strF  <br>Feeds that failed : $badfeeds <br> Twitter Accounts: $strT <br> <br> Created on $strDate  by $env:USER<br>`
     <a href='$dl_file'>Dirty Laundry</a><br> `
+    <a href='$lighter_file'>Lighter Posts</a><br> `
     <a href='$post_file'>All Posts</a></h3>" `
     |Out-File $RSS_file 

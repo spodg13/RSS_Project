@@ -1,0 +1,112 @@
+<html>  
+<head>  
+    <style>
+TABLE {border-width: 1px; border-style: solid; border-color: black; border-collapse: collapse;}
+TH {border-width: 1px; padding: 3px; border-style: solid; border-color: black; background-color: #2AA9A0; }
+TD {border-width: 1px; padding: 3px; border-style: solid; border-color: black;}
+h3{
+clear: both;
+font-size: 100%;
+margin-left: 5px;
+margin-top: 30px;
+color:#717276;
+}
+h4{
+color: black;
+font-weight: bold;
+font-size: 24px;
+}
+ .selected {
+    color = blue;
+ }
+TABLE tr:nth-child(even) td:nth-child(even){  background: #BBBBBB; }
+TABLE tr:nth-child(odd) td:nth-child(odd){ background: #F2F2F2; }
+TABLE tr:nth-child(even) td:nth-child(odd){ background: #DDDDDD; }
+TABLE tr:nth-child(odd) td:nth-child(even){ background: #E5E5E5; }
+</style>
+<script type="text/javascript" src="RSS_Java.js"></script>  
+
+</head>  
+	 <body>
+        <script> highlight_row();</script>
+        <!-- Bootstrap table -->
+        <table id="final">
+            <tbody>
+                <tr>
+                    <th scope="col">#</th>
+                    <th scope="col">Name</th>
+                    <th scope="col">Age</th>
+                    <th scope="col">Submit</th>
+                </tr>
+  
+                <tr id="1">
+                    <th scope="row">1</th>
+                    <td class="row-data">Sara</td>
+                    <td class="row-data">23</td>
+                    <td><input type="button" 
+                               value="submit" 
+                               onclick="show()" /></td>
+                </tr>
+  
+                <tr id="2">
+                    <th scope="row">2</th>
+                    <td class="row-data">John</td>
+                    <td class="row-data">30</td>
+                    <td><input type="button" 
+                               value="submit" 
+                               onclick="show()" /></td>
+                </tr>
+  
+                <tr id="3">
+                    <th scope="row">3</th>
+                    <td class="row-data">Naman</td>
+                    <td class="row-data">20</td>
+                    <td><input type="button" 
+                               value="submit" 
+                               onclick="show()" /></td>
+                </tr>
+            </tbody>
+        </table>
+        <table class="future">
+            <tbody>
+                <tr>
+                    <th scope="col">#f</th>
+                    <th scope="col">fName</th>
+                    <th scope="col">fAge</th>
+                    <th scope="col">fSubmit</th>
+                </tr>
+  
+                <tr id="1">
+                    <th scope="row">1</th>
+                    <td class="row-data">Jane</td>
+                    <td class="row-data">23</td>
+                    <td><input type="button" 
+                               value="submit" 
+                               onclick="show()" /></td>
+                </tr>
+  
+                <tr id="2">
+                    <th scope="row">2</th>
+                    <td class="row-data">Bill</td>
+                    <td class="row-data">30</td>
+                    <td><input type="button" 
+                               value="submit" 
+                               onclick="show()" /></td>
+                </tr>
+  
+                <tr id="3">
+                    <th scope="row">3</th>
+                    <td class="row-data">George</td>
+                    <td class="row-data">20</td>
+                    <td><input type="button" 
+                               value="submit" 
+                               onclick="show()" /></td>
+                </tr>
+            </tbody>
+        </table>
+<p>Welcome to JavaScript</p>  
+<form>  
+<input type="button" value="click" onclick="msg()"/>  
+</form>  
+</body>  
+</html> 
